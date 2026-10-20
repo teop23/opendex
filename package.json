@@ -1,0 +1,16 @@
+{
+  "name": "opendex",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy",
+    "manifesto": "python article/build_manifesto.py"
+  },
+  "dependencies": {
+    "workers-og": "0.0.27"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
+  }
+}

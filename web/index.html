@@ -3,8 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!--og-->
 <title>opendex</title>
 <meta name="description" content="Free trust card for any Solana mint, built from on-chain metadata and public APIs. No $299 Dexscreener receipt needed.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="opendex">
+<meta property="og:title" content="opendex: the socials are already on-chain">
+<meta property="og:description" content="Free trust card for any Solana mint. Who signed, not who paid.">
+<meta property="og:url" content="https://opendex.info/">
+<meta property="og:image" content="https://opendex.info/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="opendex: the socials are already on-chain">
+<meta name="twitter:description" content="Free trust card for any Solana mint. Who signed, not who paid.">
+<meta name="twitter:image" content="https://opendex.info/og.png">
+<!--/og-->
 <meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +45,7 @@
 
   nav { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
   nav b { font-weight: 700; }
-  nav span { color: var(--ink-2); }
+  nav span { color: var(--ink-2); text-align: right; }
   nav a { text-decoration: none; color: var(--ink-2); }
   nav a:hover { color: var(--acc); }
 
@@ -103,6 +117,11 @@
   section.feed ol { list-style: none; margin: 0; padding: 0; }
   section.feed li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
   section.feed li .meta { grid-column: 1 / -1; color: var(--ink-2); }
+  section.recent li img { width: 18px; height: 18px; object-fit: cover; vertical-align: -4px; margin-right: 8px; background: var(--wash); }
+  section.recent li .when { color: var(--ink-2); }
+  .share { display: inline-flex; gap: 12px; flex-wrap: wrap; }
+  .share button { all: unset; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .share button:hover, .share a:hover { color: var(--acc); }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
   .grid2 + .hint { margin: 20px 0 12px; }
   .hint { color: var(--ink-2); max-width: 70ch; text-wrap: pretty; }
@@ -116,10 +135,10 @@
 </head>
 <body>
 <main>
-  <nav><b>opendex</b><span>read · write · verify · feed · <a href="manifesto.html">argument</a></span></nav>
+  <nav><b>opendex</b><span><a href="/manifesto">manifesto</a> · <a href="#recent">recent</a> · <a href="#creator">write</a> · <a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></span></nav>
 
   <h1>The socials are already on-chain.<br><s>$299 receipt</s> <em>one gas fee.</em></h1>
-  <p class="lede">Paste a mint. opendex reads the token's own metadata, Jupiter, Rugcheck and the creator wallet's signed memos. Runs in your browser. No server, no key, no fee.</p>
+  <p class="lede">Paste a mint. opendex reads the token's own metadata, Jupiter, Rugcheck and the creator wallet's signed memos. Open source, no key, no fee. <a href="/manifesto">Why this exists</a>.</p>
   <form class="lookup" id="f" autocomplete="off">
     <input id="mint" placeholder="mint address" spellcheck="false" required aria-label="mint address">
     <button class="btn" id="go" type="submit">read</button>
@@ -132,15 +151,21 @@
 
   <article id="card" class="receipt" hidden></article>
 
-  <p class="foot" id="foot" hidden>"DEX paid" is one field in one endpoint: <code>tokenProfile: approved</code>. It means a form was filled and $299 arrived. Everything above was readable before that payment and will be readable after the dev leaves. <a href="manifesto.html">Read the argument</a>.</p>
+  <p class="foot" id="foot" hidden>"DEX paid" is one field in one endpoint: <code>tokenProfile: approved</code>. It means a form was filled and $299 arrived. Everything above was readable before that payment and will be readable after the dev leaves. <a href="/manifesto">Read the argument</a>.</p>
+
+  <section class="feed recent" id="recent" hidden>
+    <h2>recently checked</h2>
+    <p>Last tokens anyone ran through opendex. Verdict is about the creator wallet, not the chart.</p>
+    <ol id="recentList"></ol>
+  </section>
 
   <section class="feed" id="feed" hidden>
-    <h2>feed</h2>
+    <h2>creator updates</h2>
     <p>Every creator update published through opendex, read from the inbox address with one RPC call. No server, no moderator.</p>
     <ol id="feedList"></ol>
   </section>
 
-  <section class="creator" id="creator" hidden>
+  <section class="creator" id="creator">
     <h2>write</h2>
     <p>pump.fun metadata is immutable. If your X or Telegram changed, send one Memo transaction from the creator wallet (the one that deployed the token). Every reader of this format shows it as creator-signed. Cost: one gas fee.</p>
     <div class="grid2">
@@ -168,7 +193,7 @@
 </main>
 <div class="toast" id="toast"></div>
 
-<script src="opendex-core.js"></script>
+<script src="/opendex-core.js"></script>
 <script>
 (() => {
   const $ = (s) => document.querySelector(s);
@@ -288,17 +313,81 @@
     }
   }
   loadFeed();
-  window.addEventListener('hashchange', () => { const h = location.hash.replace('#', '').trim(); if (h && h !== $('#mint').value) { $('#mint').value = h; run(h); } });
+
+  /* recently checked: served by the edge cache (functions/api/feed.js); absent when the page runs from a file */
+  const VERDICT = { verified: ['ok', 'creator signed'], signed: ['ok', 'creator signed'], failed: ['bad', 'CLAIM FAILED'], none: ['mute', 'no signed links'] };
+  const ago = (iso) => { const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000); return s < 90 ? 'just now' : s < 3600 ? Math.round(s / 60) + 'm ago' : s < 86400 ? Math.round(s / 3600) + 'h ago' : Math.round(s / 86400) + 'd ago'; };
+  async function loadRecent() {
+    const sec = $('#recent'), ol = $('#recentList');
+    if (location.protocol === 'file:') return;
+    try {
+      const r = await fetch('/api/feed?limit=30');
+      if (!r.ok) return;
+      const items = await r.json();
+      if (!Array.isArray(items) || !items.length) return;
+      ol.innerHTML = items.map((it) => {
+        const [cls, txt] = VERDICT[it.verdict] || VERDICT.none;
+        const facts = [
+          it.mintAuthority == null ? null : 'mint ' + (it.mintAuthority ? 'revoked' : 'LIVE'),
+          it.lpLockedPct == null ? null : 'LP ' + it.lpLockedPct.toFixed(0) + '%',
+          it.risk == null ? null : 'risk ' + it.risk,
+          it.holders == null ? null : it.holders.toLocaleString('en-US') + ' holders',
+          it.paid ? 'dex receipt' : null,
+        ].filter(Boolean).join(' · ');
+        return `<li>
+          <span>${it.image ? `<img src="${esc(it.image)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ''}<a href="/t/${esc(it.mint)}">${esc(it.symbol ? '$' + it.symbol : short(it.mint))}</a> <span class="mute">${esc(it.name && it.name !== it.symbol ? it.name : '')}</span></span>
+          <span class="${cls}">${txt}</span>
+          <span class="meta">${esc(facts)}${facts ? ' · ' : ''}<span class="when">${esc(ago(it.at))}</span></span>
+        </li>`;
+      }).join('');
+      sec.hidden = false;
+    } catch (e) { /* no edge: the page still works */ }
+  }
+  loadRecent();
+
+  const MINT_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  const mintFromUrl = () => {
+    const p = location.pathname.match(/^\/t\/([1-9A-HJ-NP-Za-km-z]{32,44})\/?$/);
+    if (p) return p[1];
+    const h = location.hash.replace('#', '').trim();
+    return MINT_RE.test(h) ? h : '';
+  };
+  window.addEventListener('hashchange', () => { const h = mintFromUrl(); if (h && h !== $('#mint').value) { $('#mint').value = h; run(h); } });
+
+  /* Edge cache first (same core, shared result, feeds "recently checked"); the browser build is the fallback. */
+  async function fromEdge(mint) {
+    if (location.protocol === 'file:' || $('#rpc').value.trim()) return null;
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const r = await fetch(`/api/card/${mint}`, { signal: ctl.signal });
+      if (!r.ok) return null;
+      const c = await r.json();
+      if (!c || c.error || !c.mint || (c.cache && c.cache.partial)) return null; // throttled at the edge: build here instead
+      c.builtAt = new Date(c.builtAt);
+      return c;
+    } catch (e) { return null; } finally { clearTimeout(t); }
+  }
+
+  function shareUi(mint) {
+    const url = `${location.origin}/t/${mint}`;
+    const txt = `${(window.__card && window.__card.chain && window.__card.chain.symbol) ? '$' + window.__card.chain.symbol + ' ' : ''}trust card on opendex, who signed, not who paid`;
+    return `<span class="share">share <button type="button" data-copy="${esc(url)}">copy link</button><a href="https://x.com/intent/post?text=${encodeURIComponent(txt)}&url=${encodeURIComponent(url)}" target="_blank" rel="noopener">post on X</a><a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">send on Telegram</a></span>`;
+  }
 
   async function run(mint) {
     const st = $('#status'); st.className = ''; st.textContent = 'reading chain, jupiter, rugcheck, dexscreener…';
     $('#go').disabled = true; $('#card').hidden = true; $('#foot').hidden = true;
     try {
-      const c = await OpenDex.build(mint, { rpc: $('#rpc').value.trim() || undefined });
+      if (!MINT_RE.test(mint)) throw new Error('not a Solana mint address');
+      const c = (await fromEdge(mint)) || (await OpenDex.build(mint, { rpc: $('#rpc').value.trim() || undefined }));
       window.__card = c;
       render(c);
-      st.textContent = `share: ${location.origin}${location.pathname}#${mint}`;
-      history.replaceState(null, '', '#' + mint);
+      st.innerHTML = shareUi(mint);
+      st.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => navigator.clipboard.writeText(b.dataset.copy).then(() => toast('link copied'))));
+      if (location.protocol !== 'file:') history.replaceState(null, '', '/t/' + mint);
+      else history.replaceState(null, '', '#' + mint);
+      loadRecent();
     } catch (e) {
       st.className = 'err'; st.textContent = String(e.message || e);
     } finally { $('#go').disabled = false; }
@@ -307,7 +396,7 @@
   $('#f').addEventListener('submit', (e) => { e.preventDefault(); run($('#mint').value.trim()); });
   try { const saved = localStorage.getItem('opendex.rpc'); if (saved) $('#rpc').value = saved; } catch (e) {}
   $('#rpc').addEventListener('change', () => { try { localStorage.setItem('opendex.rpc', $('#rpc').value.trim()); } catch (e) {} });
-  const h = location.hash.replace('#', '').trim();
+  const h = mintFromUrl();
   if (h) { $('#mint').value = h; run(h); }
 
   /* creator update */
@@ -326,6 +415,7 @@
   }
   ['#u_twitter', '#u_telegram', '#u_website', '#u_note', '#u_lpburn', '#u_lplock', '#u_vesting', '#u_devwallets'].forEach((s) => $(s).addEventListener('input', updateMemo));
   $('#copyMemo').addEventListener('click', () => navigator.clipboard.writeText(memoText()).then(() => toast('memo copied')));
+  try { updateMemo(); } catch (e) {}
 
   async function loadWeb3() {
     if (window.solanaWeb3) return window.solanaWeb3;

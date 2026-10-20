@@ -1,0 +1,14 @@
+name = "opendex"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "web"
+
+# RPCs the edge functions try in order. Public ones rate-limit Cloudflare's shared IPs;
+# a keyed RPC (Helius etc.) set as a Pages secret named RPC_URLS wins over this list.
+[vars]
+RPC_URLS = "https://solana-rpc.publicnode.com,https://api.mainnet-beta.solana.com"
+SITE_ORIGIN = "https://opendex.info"
+
+[[kv_namespaces]]
+binding = "OPENDEX_CACHE"
+id = "6f4dab0d64f74e0cbed5482a2bd4b681"

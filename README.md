@@ -22,7 +22,8 @@ Everything runs in the visitor's browser against public endpoints. No backend, n
 
 | Path | What |
 | --- | --- |
-| `web/index.html` | The page. One static file. Paste a mint, get the card. Share links are `#<mint>`. Hosts the creator "publish a link update" form and the inbox feed. |
+| `web/index.html` | The page. One static file. Paste a mint, get the card. Share links are `/t/<mint>` (or `#<mint>` when served without the functions). Hosts the creator "publish a link update" form, the inbox feed and the "recently checked" list. |
+| `functions/` | Cloudflare Pages Functions, optional. `/api/card/<mint>` builds the card at the edge with the same core and caches it in KV for 10 minutes; `/t/<mint>` serves the page with per-token `og:` / `twitter:` tags; `/og/<mint>.png` renders the 1200x630 preview card; `/api/feed` lists the last 60 checked tokens. `wrangler.toml` holds the KV binding and the RPC list. |
 | `web/opendex-core.js` | The library. `OpenDex.build(mint)`, `OpenDex.feed()`, `OpenDex.verifyClaims()`, `OpenDex.memoFor()`. Vanilla JS, no dependencies, parses Token-2022 and Metaplex metadata itself. |
 | `extension/` | Chrome MV3 content script. On any `dexscreener.com/solana/...` page it mounts a strip with the on-chain socials, Jupiter and Rugcheck facts and the receipt line. Works on unpaid tokens where Dexscreener hides the links. `extension/opendex-core.js` is a copy of the web one. |
 | `tracker/` | Two stdlib-only Python scripts. `sample_paid.py` snapshots every new paid profile with price and liquidity at the moment it goes live; `followup.py` re-checks at 1 / 3 / 7 days. Purpose: produce the number that shows "DEX paid" predicts nothing. |
@@ -38,11 +39,15 @@ Page:
 python -m http.server 8787 --directory web
 ```
 
-Then open `http://localhost:8787/#<mint>`. Any static host works; there is no build step. The live page is Cloudflare Pages:
+Then open `http://localhost:8787/#<mint>`. Any static host works; there is no build step. The live page is Cloudflare Pages, with the functions and KV cache from `wrangler.toml`:
 
 ```bash
+npm install
+npx wrangler pages dev web            # local, with functions and a local KV
 npx wrangler pages deploy web --project-name opendex --branch main
 ```
+
+Public Solana RPCs rate-limit Cloudflare's shared egress IPs, so edge builds often come back partial; the page then rebuilds the card in the browser and nothing is cached. To make the edge reliable, set a keyed RPC as a Pages secret: `npx wrangler pages secret put RPC_URLS --project-name opendex` (comma-separated list, tried in order).
 
 Extension: `chrome://extensions`, Developer mode, Load unpacked, pick `extension/`. Open a Dexscreener Solana token page. The options page takes an optional RPC URL.
 
