@@ -12,7 +12,7 @@ Dexscreener sells "Enhanced Token Info" for $299. It is a form, a payment and a 
 ## What opendex does
 
 - **Read.** Builds a trust card for any mint from free sources: on-chain metadata, the IPFS JSON behind it, Jupiter's token API (dev wallet, holders, organic score, mint/freeze audit, verified flag), Rugcheck's summary, and Dexscreener's own orders endpoint so the receipt is shown for what it is ("someone paid $299 on this date").
-- **Write.** Lets the creator wallet publish a link update as one SPL Memo transaction. Only the key that launched the token can sign it, so it cannot be bought. Cost: one gas fee, about 0.000005 SOL.
+- **Write.** Lets the creator wallet publish a link update as one SPL Memo transaction. Only the key that launched the token can sign it, so it cannot be bought. Cost: one signed tx, about 0.000005 SOL.
 - **Feed.** Every update also sends 0 lamports to a fixed inbox address that nobody controls. One `getSignaturesForAddress` call lists every opendex update ever published. No feed server.
 - **Verify.** Memos can carry claims (LP burn tx, LP lock tx, vesting account, dev wallets). Readers check them on the chain. A claim that fails is shown as FAILED, which is a better skip flag than any receipt.
 

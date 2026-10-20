@@ -1,6 +1,6 @@
 # What does $299 buy on Dexscreener?
 
-*A manifesto for opendex. How a chart site became the toll booth for trust on Solana, why every terminal prints a receipt and calls it a signal, why the links behind that receipt were on the chain from block one, and how a creator can publish the same thing, better, for one gas fee.*
+*A manifesto for opendex. How a chart site became the toll booth for trust on Solana, why every terminal prints a receipt and calls it a signal, why the links behind that receipt were on the chain from block one, and how a creator can publish the same thing, better, for one signed tx.*
 
 ![cover](article/cover.png)
 
@@ -10,7 +10,7 @@
 - "DEX paid" is a single API field, **tokenProfile: approved**. GMGN stamps it on every card in Trenches with a timer. Photon prints it next to Mint Authority. pump.fun's own Terminal draws a green Dexscreener icon on the card and lets you filter on it. Axiom filters on it. Rick and Phanes alert on it. Telegram channels exist for nothing else. All of them are reading one boolean that means: the money arrived.
 - For a pump.fun token, the X, Telegram and website links were written into an **IPFS file at launch** and pinned to the mint. Dexscreener reads that file, shows the logo from it, and hides the links until $299 arrives.
 - Paying proves nothing about the project. The checker sites that popularised the badge say so in their own FAQ. Scams buy it too, and a scam has the marketing budget.
-- **opendex** reads the free sources, lets the creator wallet publish updates with one signed memo, and checks claims on the chain. Cost: one gas fee, about 0.000005 SOL. No server, no key, no company in the middle.
+- **opendex** reads the free sources, lets the creator wallet publish updates with one signed memo, and checks claims on the chain. Cost: one signed tx, about 0.000005 SOL. No server, no key, no company in the middle.
 - The question to ask a token is not "did the dev pay" but **"did the dev sign, and does the claim check out."**
 
 ## 1. How we got here
@@ -120,7 +120,7 @@ Fix those six and the receipt has nothing left to signal.
 
 **No company in the middle.** No server to rate-limit, no API key to revoke, no moderator to persuade, no terms that can be changed on a Tuesday. The chain is the database, the inbox address is the feed, the reader's browser is the backend.
 
-**Free means free.** One gas fee to write, nothing to read. Anything more and the next toll booth is already being built.
+**Free means free.** One signed tx to write, nothing to read. Anything more and the next toll booth is already being built.
 
 **The audit row is sacred.** Mint authority, freeze authority, LP, creator: those are facts. A receipt does not belong in that row. Any terminal that puts it there is selling Dexscreener's product for free.
 
@@ -132,7 +132,7 @@ opendex is four pieces of free software and one convention.
 
 **Read.** A static page and a browser extension build a trust card for any mint from the free sources above. The extension draws it on the Dexscreener page itself, next to the hidden links. The Dexscreener receipt is shown as what it is: "someone paid $299 on this date."
 
-**Write.** The creator wallet, the one that deployed the token, publishes a link update by sending one transaction containing an SPL Memo. The memo starts with opendex:v1: and carries the mint, the links, a short note and claims. Readers accept a memo only when the fee payer is the creator wallet, taken from Jupiter's dev field or the mint's update authority. Anyone else is ignored. Nobody can buy this record; only the key that launched the token can sign it. Cost: one gas fee, about 0.000005 SOL.
+**Write.** The creator wallet, the one that deployed the token, publishes a link update by sending one transaction containing an SPL Memo. The memo starts with opendex:v1: and carries the mint, the links, a short note and claims. Readers accept a memo only when the fee payer is the creator wallet, taken from Jupiter's dev field or the mint's update authority. Anyone else is ignored. Nobody can buy this record; only the key that launched the token can sign it. Cost: one signed tx, about 0.000005 SOL.
 
 **Feed.** The same transaction includes a zero-lamport transfer to a fixed inbox address. The address is derived from a hash and is off the ed25519 curve, so no private key exists for it and nobody controls it. One RPC call, the signature list for that address, returns every opendex update ever published, newest first. That is the "new profiles" feed with no company in the middle.
 
@@ -144,7 +144,7 @@ This solves the six reasons people pay. One RPC call gives a yes or no: did the 
 
 ## 8. What it costs and why it can be free
 
-Reading a card, running the extension and listing the feed are free. Publishing a creator update costs one Solana gas fee.
+Reading a card, running the extension and listing the feed are free. Publishing a creator update costs one signed transaction, a fraction of a cent.
 
 It can be free because the page is one HTML file and one script, served from anywhere or opened from disk. The RPC calls run in the reader's own browser against a public endpoint, so there is no server to pay for and nothing to rate-limit except the reader's own connection. There is nothing to moderate: the chain decides who the creator is, and claims verify themselves. The inbox address is the feed, so there is no feed server. Nobody has to be trusted, so nobody has to be paid.
 
@@ -157,7 +157,7 @@ The code is open and the memo format is one page in the README. Anyone can write
 - **Not a Dexscreener replacement.** The extension uses Dexscreener's public API only to resolve a pair to a mint and to show the receipt line. Their API terms forbid products "whose primary purpose is to compete directly with DEX Screener's product." opendex's purpose is verification, and every Dexscreener call in it is optional.
 - **Not spoof-proof against the creator.** A scammer who deployed a token can publish a memo about it. What they cannot do is publish a claim that verifies on the chain without doing the thing the claim describes.
 - **Public RPC is rate-limited per visitor.** A reader who hits the limit waits and retries. Heavy users bring their own endpoint.
-- **Memos are v1.** Solana Attestation Service is the proper long-term home for creator attestations. Memos ship today with no program and no cost beyond gas. The format carries a version prefix so readers can move.
+- **Memos are v1.** Solana Attestation Service is the proper long-term home for creator attestations. Memos ship today with no program and no cost beyond the tx fee. The format carries a version prefix so readers can move.
 
 ## 10. What should happen next
 
