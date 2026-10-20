@@ -25,4 +25,4 @@ opendex.so, opendex.gg, opendex.sh: their registries do not answer RDAP through 
 
 ## Recommendation
 
-opendex.fun as the main name if the audience is the trenches crowd, opendex.info if the site should read as the neutral reference the manifesto wants to be. opendex.page as the fallback. All point at the static page; GitHub Pages (live at https://teop23.github.io/opendex/) serves it with a CNAME.
+opendex.fun as the main name if the audience is the trenches crowd, opendex.info if the site should read as the neutral reference the manifesto wants to be. opendex.page as the fallback. All point at the static page; Cloudflare Pages (live at https://opendex-6bd.pages.dev/) serves it, custom domain attaches in the Pages project.

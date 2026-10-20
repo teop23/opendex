@@ -2,7 +2,7 @@
 
 **Who signed, not who paid.** A free, serverless replacement for the "DEX paid" badge on Solana.
 
-Live page: **https://teop23.github.io/opendex/** (paste a mint, or open `/#<mint>`).
+Live page: **https://opendex-6bd.pages.dev/** (paste a mint, or open `/#<mint>`).
 The argument: [OPENDEX.md](OPENDEX.md). The research behind it: [research/FINDINGS.md](research/FINDINGS.md).
 
 ## The problem in one paragraph
@@ -38,7 +38,11 @@ Page:
 python -m http.server 8787 --directory web
 ```
 
-Then open `http://localhost:8787/#<mint>`. Any static host works; there is no build step. GitHub Pages deploys `web/` on every push to `main` via [.github/workflows/pages.yml](.github/workflows/pages.yml).
+Then open `http://localhost:8787/#<mint>`. Any static host works; there is no build step. The live page is Cloudflare Pages:
+
+```bash
+npx wrangler pages deploy web --project-name opendex --branch main
+```
 
 Extension: `chrome://extensions`, Developer mode, Load unpacked, pick `extension/`. Open a Dexscreener Solana token page. The options page takes an optional RPC URL.
 
