@@ -27,7 +27,7 @@ Everything runs in the visitor's browser against public endpoints. No backend, n
 | `extension/` | Chrome MV3 content script. On any `dexscreener.com/solana/...` page it mounts a strip with the on-chain socials, Jupiter and Rugcheck facts and the receipt line. Works on unpaid tokens where Dexscreener hides the links. `extension/opendex-core.js` is a copy of the web one. |
 | `tracker/` | Two stdlib-only Python scripts. `sample_paid.py` snapshots every new paid profile with price and liquidity at the moment it goes live; `followup.py` re-checks at 1 / 3 / 7 days. Purpose: produce the number that shows "DEX paid" predicts nothing. |
 | `research/` | `FINDINGS.md`: everything checked live, with sources and dates. `domains.md`: domain availability. `test_core.mjs`: smoke test for the core against a real mint. |
-| `article/` | Diagrams for the manifesto (`article/src/` are the HTML sources, rendered with headless Chrome at 1600 px). |
+| `article/` | Diagrams for the manifesto (`article/src/` are the HTML sources, rendered with headless Chrome at 1600 px). `build_manifesto.py` renders `OPENDEX.md` into `web/manifesto.html`. |
 | `PROPOSAL.md` | Design notes, alternatives considered, why memos and not a program. |
 
 ## Run it
