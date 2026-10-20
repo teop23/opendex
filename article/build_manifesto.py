@@ -35,6 +35,8 @@ TEMPLATE = """<!doctype html>
 <meta name="twitter:description" content="{description}">
 <meta name="twitter:image" content="https://opendex.info/og.png">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#121317">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
