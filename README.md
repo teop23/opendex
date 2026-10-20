@@ -2,7 +2,7 @@
 
 **Who signed, not who paid.** A free, serverless replacement for the "DEX paid" badge on Solana.
 
-Live page: **https://opendex-6bd.pages.dev/** (paste a mint, or open `/#<mint>`).
+Live page: **https://opendex.info/** (paste a mint, or open `/#<mint>`).
 The argument: [OPENDEX.md](OPENDEX.md). The research behind it: [research/FINDINGS.md](research/FINDINGS.md).
 
 ## The problem in one paragraph
