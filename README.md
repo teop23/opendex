@@ -47,6 +47,8 @@ npx wrangler pages dev web            # local, with functions and a local KV
 npx wrangler pages deploy web --project-name opendex --branch main
 ```
 
+Pushes to `main` that touch `web/`, `functions/` or `wrangler.toml` deploy automatically through `.github/workflows/deploy.yml`; it needs a repository secret `CLOUDFLARE_API_TOKEN` with the Cloudflare Pages: Edit permission.
+
 Public Solana RPCs rate-limit Cloudflare's shared egress IPs, so edge builds often come back partial; the page then rebuilds the card in the browser and nothing is cached. To make the edge reliable, set a keyed RPC as a Pages secret: `npx wrangler pages secret put RPC_URLS --project-name opendex` (comma-separated list, tried in order).
 
 Extension: `chrome://extensions`, Developer mode, Load unpacked, pick `extension/`. Open a Dexscreener Solana token page. The options page takes an optional RPC URL.
