@@ -16,7 +16,8 @@ opendex.com, opendex.net, opendex.org, opendex.io, opendex.xyz, opendex.app, ope
 | opendex.wtf | Matches the rant; may read as unserious | about $25-35 |
 | opendex.tools | Describes the extension plus page | about $25-35 |
 | opendex.wiki | If the inbox feed becomes a reference | about $25-30 |
-| opendex.run, opendex.one, opendex.link, opendex.site, opendex.help, opendex.market, opendex.money, opendex.cash, opendex.info, open-dex.fun | available, weaker fit | varies |
+| opendex.info | Oldest of the cheap TLDs, reads as "reference site", fits a manifesto plus a lookup page; no launchpad vibe, mild spam reputation from the 2000s | about $5-20, usually the cheapest renewal |
+| opendex.run, opendex.one, opendex.link, opendex.site, opendex.help, opendex.market, opendex.money, opendex.cash, open-dex.fun | available, weaker fit | varies |
 
 ## Unverified
 
@@ -24,4 +25,4 @@ opendex.so, opendex.gg, opendex.sh: their registries do not answer RDAP through 
 
 ## Recommendation
 
-opendex.fun as the main name, opendex.page as the fallback if .fun pricing or reputation is a concern. Both point at the static page; GitHub Pages serves it for free with a CNAME.
+opendex.fun as the main name if the audience is the trenches crowd, opendex.info if the site should read as the neutral reference the manifesto wants to be. opendex.page as the fallback. All point at the static page; GitHub Pages (live at https://teop23.github.io/opendex/) serves it with a CNAME.
