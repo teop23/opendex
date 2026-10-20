@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>opendex</title>
+<meta name="description" content="Free trust card for any Solana mint, built from on-chain metadata and public APIs. No $299 Dexscreener receipt needed.">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: oklch(14% 0.012 260);
+    --ink: oklch(94% 0.01 260);
+    --ink-2: oklch(70% 0.02 260);
+    --line: oklch(28% 0.015 260);
+    --wash: oklch(18% 0.014 260);
+    --acc: oklch(80% 0.17 150);
+    --bad: oklch(72% 0.17 25);
+    --z-toast: 30;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 "JetBrains Mono", ui-monospace, Menlo, monospace; }
+  a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { color: var(--acc); }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+  @media (min-width: 640px) { main { padding: 32px 24px 80px; } }
+
+  nav { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  nav b { font-weight: 700; }
+  nav span { color: var(--ink-2); }
+  nav a { text-decoration: none; color: var(--ink-2); }
+  nav a:hover { color: var(--acc); }
+
+  h1 { font-weight: 500; font-size: clamp(30px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; margin: 64px 0 20px; max-width: 24ch; text-wrap: balance; }
+  h1 s { color: var(--ink-2); text-decoration-color: var(--bad); text-decoration-thickness: 3px; }
+  h1 em { font-style: normal; color: var(--acc); }
+  .lede { color: var(--ink-2); max-width: 62ch; margin: 0 0 36px; text-wrap: pretty; }
+
+  form.lookup { display: grid; grid-template-columns: 1fr auto; gap: 8px; max-width: 720px; }
+  @media (max-width: 480px) { form.lookup { grid-template-columns: 1fr; } }
+  input, textarea { background: transparent; border: 1px solid var(--line); color: var(--ink); font: inherit; padding: 12px 14px; min-width: 0; width: 100%; }
+  input::placeholder, textarea::placeholder { color: var(--ink-2); opacity: .8; }
+  input:focus-visible, textarea:focus-visible { outline: none; border-color: var(--acc); }
+  .btn { background: var(--acc); color: var(--bg); border: 1px solid var(--acc); font: inherit; font-weight: 700; padding: 12px 18px; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .88; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; }
+  .btn.ghost:hover { border-color: var(--ink-2); opacity: 1; }
+  .btn[disabled] { opacity: .5; cursor: progress; }
+  details.adv { margin-top: 12px; color: var(--ink-2); max-width: 720px; }
+  details.adv summary { cursor: pointer; list-style: none; }
+  details.adv summary::-webkit-details-marker { display: none; }
+  details.adv summary::before { content: "+ "; }
+  details.adv[open] summary::before { content: "- "; }
+  details.adv input { margin-top: 8px; }
+
+  #status { margin: 24px 0 0; color: var(--ink-2); min-height: 1.5em; overflow-wrap: anywhere; }
+  #status.err { color: var(--bad); }
+  #status.err::before { content: "err: "; }
+
+  .ok { color: var(--acc); } .bad { color: var(--bad); } .mute { color: var(--ink-2); }
+
+  /* receipt */
+  .receipt { margin: 56px 0 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); padding: 20px 0; animation: rise .4s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .receipt { animation: none; } .btn { transition: none; } }
+  .hd { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--ink-2); margin-bottom: 10px; }
+  .hd .id { display: flex; align-items: center; gap: 10px; color: var(--ink); min-width: 0; }
+  .hd img { width: 28px; height: 28px; object-fit: cover; background: var(--wash); flex: none; }
+  .hd .sym { font-weight: 700; }
+  .hd .mint { color: var(--ink-2); overflow-wrap: anywhere; }
+  .hd .mint button { all: unset; cursor: pointer; margin-left: 8px; text-decoration: underline; text-underline-offset: 3px; }
+  .hd .mint button:hover { color: var(--acc); }
+  .row { display: grid; grid-template-columns: 22ch 1fr auto; gap: 4px 12px; padding: 9px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .row:last-child { border-bottom: 0; }
+  .row.sub { padding-top: 6px; padding-bottom: 6px; }
+  .row.sub .k { padding-left: 2ch; }
+  .row .k { color: var(--ink-2); }
+  .row .d { min-width: 0; overflow-wrap: anywhere; }
+  .row .s { text-align: right; white-space: nowrap; }
+  .row .d .sub2 { color: var(--ink-2); display: block; }
+  .row ul { margin: 4px 0 0; padding-left: 2ch; }
+  .row ul b { font-weight: 500; }
+  @media (max-width: 700px) {
+    .row { grid-template-columns: 1fr auto; }
+    .row .k { grid-column: 1 / -1; }
+    .row .s { white-space: normal; }
+  }
+  .links a { margin-left: 8px; }
+  .links a:first-child { margin-left: 0; }
+  .links .dot { color: var(--ink-2); }
+
+  .foot { margin-top: 48px; color: var(--ink-2); max-width: 70ch; text-wrap: pretty; }
+  .foot code { color: var(--ink); }
+
+  /* feed + creator */
+  section { margin-top: 64px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  section h2 { font-weight: 700; font-size: 14px; margin: 0 0 6px; }
+  section > p { color: var(--ink-2); max-width: 70ch; margin: 0 0 20px; text-wrap: pretty; }
+  section.feed ol { list-style: none; margin: 0; padding: 0; }
+  section.feed li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  section.feed li .meta { grid-column: 1 / -1; color: var(--ink-2); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+  .grid2 + .hint { margin: 20px 0 12px; }
+  .hint { color: var(--ink-2); max-width: 70ch; text-wrap: pretty; }
+  pre.memo { white-space: pre-wrap; overflow-wrap: anywhere; border: 1px dashed var(--line); padding: 12px 14px; margin: 16px 0; color: var(--ink-2); }
+  pre.memo .n { color: var(--ink); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .actions span { color: var(--ink-2); overflow-wrap: anywhere; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--acc); color: var(--bg); padding: 8px 14px; font-weight: 700; z-index: var(--z-toast); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <nav><b>opendex</b><span>read · write · verify · feed · <a href="../OPENDEX.md">argument</a></span></nav>
+
+  <h1>The socials are already on-chain.<br><s>$299 receipt</s> <em>one gas fee.</em></h1>
+  <p class="lede">Paste a mint. opendex reads the token's own metadata, Jupiter, Rugcheck and the creator wallet's signed memos. Runs in your browser. No server, no key, no fee.</p>
+  <form class="lookup" id="f" autocomplete="off">
+    <input id="mint" placeholder="mint address" spellcheck="false" required aria-label="mint address">
+    <button class="btn" id="go" type="submit">read</button>
+  </form>
+  <details class="adv">
+    <summary>custom RPC (public one is rate-limited)</summary>
+    <input id="rpc" placeholder="https://mainnet.helius-rpc.com/?api-key=…" aria-label="RPC URL">
+  </details>
+  <p id="status" aria-live="polite"></p>
+
+  <article id="card" class="receipt" hidden></article>
+
+  <p class="foot" id="foot" hidden>"DEX paid" is one field in one endpoint: <code>tokenProfile: approved</code>. It means a form was filled and $299 arrived. Everything above was readable before that payment and will be readable after the dev leaves. <a href="../OPENDEX.md">Read the argument</a>.</p>
+
+  <section class="feed" id="feed" hidden>
+    <h2>feed</h2>
+    <p>Every creator update published through opendex, read from the inbox address with one RPC call. No server, no moderator.</p>
+    <ol id="feedList"></ol>
+  </section>
+
+  <section class="creator" id="creator" hidden>
+    <h2>write</h2>
+    <p>pump.fun metadata is immutable. If your X or Telegram changed, send one Memo transaction from the creator wallet (the one that deployed the token). Every reader of this format shows it as creator-signed. Cost: one gas fee.</p>
+    <div class="grid2">
+      <input id="u_twitter" placeholder="https://x.com/…" aria-label="X link">
+      <input id="u_telegram" placeholder="https://t.me/…" aria-label="Telegram link">
+      <input id="u_website" placeholder="https://…" aria-label="website">
+      <input id="u_note" placeholder="note (optional, 280 chars)" maxlength="280" aria-label="note">
+    </div>
+    <p class="hint">Links alone are self-promotion; nobody should trade on them. The claims below are checked on-chain by every reader. A false one marks the token as a skip.</p>
+    <div class="grid2">
+      <input id="u_lpburn" placeholder="LP burn tx signature" aria-label="LP burn tx">
+      <input id="u_lplock" placeholder="LP lock tx signature" aria-label="LP lock tx">
+      <input id="u_vesting" placeholder="vesting / lock account" aria-label="vesting account">
+      <input id="u_devwallets" placeholder="dev wallets, comma separated" aria-label="dev wallets">
+    </div>
+    <pre class="memo" id="memoPreview"></pre>
+    <div class="actions">
+      <button class="btn" id="signBtn" type="button">sign &amp; send</button>
+      <button class="btn ghost" id="copyMemo" type="button">copy memo</button>
+      <span id="walletMsg"></span>
+    </div>
+  </section>
+
+  <p class="foot">sources: RPC getAccountInfo · IPFS · lite-api.jup.ag · api.rugcheck.xyz · api.dexscreener.com/orders/v1 · Memo program · inbox <a href="https://solscan.io/account/FGzq3zKAY18ifGNsKmHdbPo262FSQtnGoDdy8HRQpYSj" target="_blank" rel="noopener">FGzq…pYSj</a></p>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="opendex-core.js"></script>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const short = (a) => a ? a.slice(0, 4) + '…' + a.slice(-4) : '';
+  const fmtUsd = (n) => n == null ? '—' : n >= 1e6 ? '$' + (n/1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n/1e3).toFixed(1) + 'K' : '$' + Number(n).toFixed(2);
+  const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
+  const KNOWN_AUTH = { TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM: 'pump.fun program' };
+  const LABEL = { twitter: 'X', telegram: 'Telegram', website: 'Website', discord: 'Discord', github: 'GitHub' };
+  let toastT;
+  const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); };
+
+  const links = (soc) => Object.keys(soc).length
+    ? `<span class="links ok">${Object.entries(soc).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener nofollow">${esc(LABEL[k] || k)}</a>`).join('<span class="dot"> · </span>')}</span>`
+    : `<span class="bad">none</span>`;
+  const row = (k, d, s, sub) => `<div class="row${sub ? ' sub' : ''}"><span class="k">${k}</span><span class="d">${d}</span><span class="s">${s}</span></div>`;
+
+  function render(c) {
+    const ch = c.chain, j = c.jup, r = c.rug, d = c.dex;
+    const auth = ch && ch.updateAuthority;
+    const authTxt = !auth ? 'immutable' : (KNOWN_AUTH[auth] ? KNOWN_AUTH[auth] + ' ' : 'update authority ') + short(auth);
+    const rows = [];
+
+    rows.push(row('launch metadata',
+      `${ch && ch.cid ? 'ipfs ' + esc(short(ch.cid)) : esc(((ch && ch.jsonUri) || '').slice(0, 60))} · ${esc(authTxt)}${ch && ch.createdOn ? ' · createdOn ' + esc(ch.createdOn) : ''}${ch && ch.tokenProgram === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' ? ' · token-2022' : ''}`
+        + (ch && ch.error ? `<span class="sub2">metadata JSON unreachable: ${esc(ch.error)}</span>` : '') + (c.errors.chain ? `<span class="sub2">${esc(c.errors.chain)}</span>` : ''),
+      links((ch && ch.socials) || {})));
+
+    if (c.creator) {
+      const cl = c.creator.claims || {};
+      const flat = Object.values(cl).flatMap((v) => Array.isArray(v) ? v : [v]);
+      const checked = flat.filter((x) => x.ok !== null && x.ok !== undefined);
+      const okN = checked.filter((x) => x.ok === true).length, failN = checked.filter((x) => x.ok === false).length;
+      const status = !flat.length ? '<span class="mute">links only</span>' : failN ? `<span class="bad">${failN} FAILED</span>` : `<span class="ok">${okN}/${checked.length} claims verified</span>`;
+      rows.push(row('creator-signed update',
+        `${esc(short(c.creatorWallet))} · ${fmtDate(c.creator.at)} · <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx ${esc(short(c.creator.signature))}</a>${c.creator.note ? `<span class="sub2">${esc(c.creator.note)}</span>` : ''}`,
+        links(c.creator.socials) + ' ' + status));
+      rows.push(...claimRows(cl));
+    } else {
+      rows.push(row('creator-signed update',
+        c.creatorWallet ? `creator ${esc(short(c.creatorWallet))} · no opendex memo${c.errors.creator ? `<span class="sub2">${esc(c.errors.creator)}</span>` : ''}` : 'creator wallet unknown',
+        '<span class="mute">none</span>'));
+    }
+
+    if (j) {
+      rows.push(row('jupiter',
+        `${j.verified ? 'verified' : 'not verified'} · organic ${j.organicScore == null ? '—' : Math.round(j.organicScore)} · holders ${j.holders == null ? '—' : j.holders.toLocaleString('en-US')} · top10 ${j.audit && j.audit.topHoldersPercentage != null ? j.audit.topHoldersPercentage.toFixed(1) + '%' : '—'} · dev mints ${j.audit ? j.audit.devMints ?? '—' : '—'} · mcap ${fmtUsd(j.mcap)} · liq ${fmtUsd(j.liquidity)}`
+          + (!j.verified ? `<span class="sub2">standard review is free: <a href="https://verified.jup.ag/tokens/submit" target="_blank" rel="noopener">verified.jup.ag</a></span>` : ''),
+        j.verified ? '<span class="ok">verified</span>' : '<span class="mute">unverified</span>'));
+      if (j.audit) {
+        const m = j.audit.mintAuthorityDisabled, f = j.audit.freezeAuthorityDisabled;
+        rows.push(row('mint / freeze', `authority ${m ? 'null' : 'LIVE'} / ${f ? 'null' : 'LIVE'}`, m && f ? '<span class="ok">revoked</span>' : '<span class="bad">live</span>'));
+      }
+    } else {
+      rows.push(row('jupiter', `not indexed yet${c.errors.jup ? ' · ' + esc(c.errors.jup) : ''}`, '<span class="mute">—</span>'));
+    }
+
+    if (r) {
+      rows.push(row('rugcheck',
+        `risk ${r.score ?? '—'}/100 · LP locked ${r.lpLockedPct == null ? '—' : r.lpLockedPct.toFixed(1) + '%'}`
+          + (r.risks.length ? `<ul>${r.risks.map((x) => `<li><b>${esc(x.name)}</b> <span class="mute">${esc(x.desc)}</span></li>`).join('')}</ul>` : ''),
+        r.risks.length ? `<span class="bad">${r.risks.length} flag${r.risks.length > 1 ? 's' : ''}</span>` : '<span class="ok">no flags</span>'));
+    } else {
+      rows.push(row('rugcheck', `unavailable${c.errors.rug ? ' · ' + esc(c.errors.rug) : ''}`, '<span class="mute">—</span>'));
+    }
+
+    if (d) {
+      rows.push(row('dexscreener',
+        `${d.paid ? 'Enhanced Token Info bought ' + fmtDate(d.paidAt) : d.processing ? 'order processing (can still fail)' : 'no order'}${d.boosts ? ' · ' + d.boosts + ' boosts' : ''}${d.cto ? ' · CTO claimed' : ''} · <a href="${esc(d.pairUrl)}" target="_blank" rel="noopener">chart</a>`,
+        d.paid ? '<span class="mute">receipt</span>' : '<span class="mute">no receipt</span>'));
+    } else {
+      rows.push(row('dexscreener', `unavailable${c.errors.dex ? ' · ' + esc(c.errors.dex) : ''}`, '<span class="mute">—</span>'));
+    }
+
+    $('#card').innerHTML = `
+      <div class="hd">
+        <span class="id">${ch && ch.image ? `<img src="${esc(ch.image)}" alt="" referrerpolicy="no-referrer">` : ''}<span><span class="sym">${esc(ch ? ch.symbol || ch.name : '?')}</span> <span class="mute">${esc(ch && ch.name && ch.name !== ch.symbol ? ch.name : '')}</span><br><span class="mint">${esc(c.mint)}<button type="button" data-copy="${esc(c.mint)}">copy</button></span></span></span>
+        <span>built ${c.builtAt.toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
+      </div>
+      ${rows.join('')}`;
+    $('#card').hidden = false;
+    $('#foot').hidden = false;
+    $('#card').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => navigator.clipboard.writeText(b.dataset.copy).then(() => toast('copied'))));
+    $('#creator').hidden = false;
+    updateMemo();
+  }
+
+  function claimRows(cl) {
+    const NAME = { lpBurn: 'lpBurn', lpLock: 'lpLock', vesting: 'vesting', devWallets: 'devWallets' };
+    const out = [];
+    for (const [k, v] of Object.entries(cl)) {
+      const arr = Array.isArray(v) ? v : [v];
+      const d = arr.map((x) => {
+        const link = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(x.value) ? `https://solscan.io/tx/${esc(x.value)}` : `https://solscan.io/account/${esc(x.value)}`;
+        return `<a href="${link}" target="_blank" rel="noopener">${esc(short(x.value))}</a>${x.why ? ' <span class="mute">' + esc(x.why) + '</span>' : ''}${x.byCreator === false ? ' <span class="bad">not sent by creator</span>' : ''}`;
+      }).join('<br>');
+      const anyFail = arr.some((x) => x.ok === false), allOk = arr.length && arr.every((x) => x.ok === true);
+      const s = anyFail ? '<span class="bad">FAILED</span>' : allOk ? '<span class="ok">ok</span>' : '<span class="mute">self-declared</span>';
+      out.push(row(NAME[k] || esc(k), d, s, true));
+    }
+    return out;
+  }
+
+  async function loadFeed() {
+    const sec = $('#feed'), ol = $('#feedList');
+    try {
+      const items = await OpenDex.feed($('#rpc').value.trim() || undefined, 20, true);
+      if (!items.length) { sec.hidden = true; return; }
+      ol.innerHTML = items.map((it) => `<li>
+        <span><a href="#${esc(it.mint)}">${esc(it.name || short(it.mint))}</a> ${it.symbol ? '<span class="mute">' + esc(it.symbol) + '</span>' : ''}</span>
+        <span class="${it.creatorOk === true ? 'ok' : it.creatorOk === false ? 'bad' : 'mute'}">${it.creatorOk === true ? 'creator-signed' : it.creatorOk === false ? 'NOT the creator wallet' : 'creator unknown'}</span>
+        <span class="meta">${esc(fmtDate(it.at))} · ${Object.keys(it.socials).join(', ') || 'no links'}${it.hasClaims ? ' · claims' : ''} · <a href="https://solscan.io/tx/${esc(it.signature)}" target="_blank" rel="noopener">tx</a></span>
+      </li>`).join('');
+      sec.hidden = false;
+    } catch (e) {
+      sec.hidden = true;
+    }
+  }
+  loadFeed();
+  window.addEventListener('hashchange', () => { const h = location.hash.replace('#', '').trim(); if (h && h !== $('#mint').value) { $('#mint').value = h; run(h); } });
+
+  async function run(mint) {
+    const st = $('#status'); st.className = ''; st.textContent = 'reading chain, jupiter, rugcheck, dexscreener…';
+    $('#go').disabled = true; $('#card').hidden = true; $('#foot').hidden = true;
+    try {
+      const c = await OpenDex.build(mint, { rpc: $('#rpc').value.trim() || undefined });
+      window.__card = c;
+      render(c);
+      st.textContent = `share: ${location.origin}${location.pathname}#${mint}`;
+      history.replaceState(null, '', '#' + mint);
+    } catch (e) {
+      st.className = 'err'; st.textContent = String(e.message || e);
+    } finally { $('#go').disabled = false; }
+  }
+
+  $('#f').addEventListener('submit', (e) => { e.preventDefault(); run($('#mint').value.trim()); });
+  try { const saved = localStorage.getItem('opendex.rpc'); if (saved) $('#rpc').value = saved; } catch (e) {}
+  $('#rpc').addEventListener('change', () => { try { localStorage.setItem('opendex.rpc', $('#rpc').value.trim()); } catch (e) {} });
+  const h = location.hash.replace('#', '').trim();
+  if (h) { $('#mint').value = h; run(h); }
+
+  /* creator update */
+  const socialsFromForm = () => ({ twitter: $('#u_twitter').value.trim(), telegram: $('#u_telegram').value.trim(), website: $('#u_website').value.trim() });
+  const claimsFromForm = () => ({
+    lpBurn: $('#u_lpburn').value.trim(),
+    lpLock: $('#u_lplock').value.trim(),
+    vesting: $('#u_vesting').value.trim(),
+    devWallets: $('#u_devwallets').value.split(',').map((x) => x.trim()).filter(Boolean),
+  });
+  const memoText = () => OpenDex.memoFor(socialsFromForm(), $('#u_note').value.trim(), claimsFromForm(), window.__card && window.__card.mint);
+  function updateMemo() {
+    const m = memoText();
+    const n = new TextEncoder().encode(m).length;
+    $('#memoPreview').innerHTML = `${esc(m)}\n<span class="n">${n} / 566 bytes</span>`;
+  }
+  ['#u_twitter', '#u_telegram', '#u_website', '#u_note', '#u_lpburn', '#u_lplock', '#u_vesting', '#u_devwallets'].forEach((s) => $(s).addEventListener('input', updateMemo));
+  $('#copyMemo').addEventListener('click', () => navigator.clipboard.writeText(memoText()).then(() => toast('memo copied')));
+
+  async function loadWeb3() {
+    if (window.solanaWeb3) return window.solanaWeb3;
+    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+    return window.solanaWeb3;
+  }
+  $('#signBtn').addEventListener('click', async () => {
+    const msg = $('#walletMsg');
+    try {
+      const provider = window.solana || (window.phantom && window.phantom.solana);
+      if (!provider) { msg.textContent = 'no Solana wallet found in this browser'; return; }
+      const memo = memoText();
+      if (memo.length > 566) { msg.textContent = 'memo too long for one transaction; shorten links or note'; return; }
+      msg.textContent = 'loading web3…';
+      const w3 = await loadWeb3();
+      const { publicKey } = await provider.connect();
+      const card = window.__card;
+      if (card && card.creatorWallet && publicKey.toBase58() !== card.creatorWallet) {
+        msg.textContent = `connected ${short(publicKey.toBase58())} is not the creator wallet ${short(card.creatorWallet)}; readers will ignore this memo`;
+        return;
+      }
+      const conn = new w3.Connection($('#rpc').value.trim() || OpenDex.DEFAULT_RPC, 'confirmed');
+      const ix = new w3.TransactionInstruction({ keys: [], programId: new w3.PublicKey(OpenDex.MEMO_PROGRAM), data: new TextEncoder().encode(memo) });
+      // 0-lamport transfer to the inbox: makes this update discoverable through getSignaturesForAddress(INBOX)
+      const inbox = w3.SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new w3.PublicKey(OpenDex.INBOX), lamports: 0 });
+      const tx = new w3.Transaction().add(ix, inbox);
+      tx.feePayer = publicKey;
+      tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+      msg.textContent = 'approve in wallet…';
+      const { signature } = await provider.signAndSendTransaction(tx);
+      msg.innerHTML = `sent · <a href="https://solscan.io/tx/${esc(signature)}" target="_blank" rel="noopener">tx</a> · rebuild the card after confirmation`;
+    } catch (e) { msg.textContent = String(e.message || e); }
+  });
+})();
+</script>
+</body>
+</html>

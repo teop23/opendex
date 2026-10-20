@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "opendex: on-chain socials on Dexscreener",
+  "version": "0.1.0",
+  "description": "Shows a Solana token's on-chain socials, Jupiter verification and Rugcheck summary on dexscreener.com token pages, whether or not anyone paid for Enhanced Token Info.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://api.mainnet-beta.solana.com/*",
+    "https://*.helius-rpc.com/*",
+    "https://lite-api.jup.ag/*",
+    "https://api.rugcheck.xyz/*",
+    "https://api.dexscreener.com/*",
+    "https://pump.mypinata.cloud/*",
+    "https://ipfs.io/*",
+    "https://*.ipfs.w3s.link/*",
+    "https://dweb.link/*",
+    "https://gateway.pinata.cloud/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://dexscreener.com/solana/*"],
+      "js": ["opendex-core.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": { "page": "options.html", "open_in_tab": false }
+}

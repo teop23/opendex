@@ -1,0 +1,19 @@
+#opendex-strip {
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483000;
+  max-width: 440px; padding: 10px 14px 12px;
+  background: #16171c; color: #ebecf0; border: 1px dashed #3a3d47;
+  font: 12.5px/1.5 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; box-shadow: 0 8px 30px rgba(0,0,0,.45);
+}
+#opendex-strip .df-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #3a3d47; }
+#opendex-strip .df-head b { font-weight: 700; }
+#opendex-strip .df-x { margin-left: auto; background: none; border: 0; color: #a6a9b4; font: inherit; font-size: 15px; cursor: pointer; line-height: 1; }
+#opendex-strip .df-x:hover { color: #ebecf0; }
+#opendex-strip .df-mono { color: #a6a9b4; }
+#opendex-strip ul { list-style: none; margin: 0; padding: 0; }
+#opendex-strip li { padding: 4px 0; border-bottom: 1px solid #26282f; }
+#opendex-strip li:last-child { border-bottom: 0; }
+#opendex-strip a { color: #ebecf0; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; margin-right: 6px; }
+#opendex-strip a:hover { color: #7ee2a8; }
+#opendex-strip .df-ok { color: #7ee2a8; }
+#opendex-strip .df-bad { color: #f0907c; }
+#opendex-strip .df-muted { color: #a6a9b4; }
