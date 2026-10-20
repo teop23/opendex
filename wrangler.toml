@@ -3,10 +3,10 @@ compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "web"
 
-# RPCs the edge functions try in order. Public ones rate-limit Cloudflare's shared IPs;
-# a keyed RPC (Helius etc.) set as a Pages secret named RPC_URLS wins over this list.
+# RPCs the edge functions try in order live in the Pages secret RPC_URLS (comma-separated):
+#   npx wrangler pages secret put RPC_URLS --project-name opendex
+# Public RPCs rate-limit Cloudflare's shared IPs, so use a keyed one. Without the secret the core's default is used.
 [vars]
-RPC_URLS = "https://solana-rpc.publicnode.com,https://api.mainnet-beta.solana.com"
 SITE_ORIGIN = "https://opendex.info"
 
 [[kv_namespaces]]
