@@ -50,7 +50,7 @@ function html(s, img, mint) {
   const chips = [
     s.mintRevoked === null ? null : chip('mint', s.mintRevoked ? 'revoked' : 'LIVE', s.mintRevoked ? C.acc : C.bad),
     s.freezeRevoked === null ? null : chip('freeze', s.freezeRevoked ? 'revoked' : 'LIVE', s.freezeRevoked ? C.acc : C.bad),
-    s.lpLockedPct == null ? null : chip('LP locked', s.lpLockedPct.toFixed(0) + '%', s.lpLockedPct >= 90 ? C.acc : C.ink),
+    s.onCurve ? chip('LP', `${s.launchpad} curve`, C.ink) : s.lpLockedPct == null ? null : chip('LP locked', s.lpLockedPct.toFixed(0) + '%', s.lpLockedPct >= 90 ? C.acc : C.ink),
     s.risk == null ? null : chip('rugcheck', `${s.risk}/100`, s.riskFlags ? C.bad : C.acc),
     s.holders == null ? null : chip('holders', s.holders.toLocaleString('en-US'), C.ink),
   ].filter(Boolean).join('');

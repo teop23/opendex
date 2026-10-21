@@ -39,7 +39,10 @@ export function summary(card) {
     signature: (card.creator && card.creator.signature) || null,
     mintRevoked: j.audit ? !!j.audit.mintAuthorityDisabled : ch.mintAuthority === null ? true : ch.mintAuthority ? false : null,
     freezeRevoked: j.audit ? !!j.audit.freezeAuthorityDisabled : ch.freezeAuthority === null ? true : ch.freezeAuthority ? false : null,
-    lpLockedPct: r.lpLockedPct ?? null,
+    launchpad: j.launchpad || null,
+    onCurve: !!j.onCurve,
+    lpLockedPct: j.onCurve ? null : r.lpLockedPct ?? null, // no LP exists on a bonding curve
+
     risk: r.score ?? null,
     riskFlags: (r.risks || []).length,
     holders: j.holders ?? null,

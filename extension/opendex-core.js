@@ -227,6 +227,10 @@
       holders: t.holderCount,
       dev: t.dev || null,
       launchpad: t.launchpad || null,
+      graduatedPool: t.graduatedPool || null,
+      graduatedAt: t.graduatedAt || null,
+      // still on the launchpad's bonding curve: liquidity lives in the curve program, there is no LP token to lock or burn yet
+      onCurve: !!t.launchpad && !t.graduatedPool,
       mcap: t.mcap,
       liquidity: t.liquidity,
       audit: t.audit || {},
