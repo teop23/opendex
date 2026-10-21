@@ -483,6 +483,8 @@
 
   async function loadWeb3() {
     if (window.solanaWeb3) return window.solanaWeb3;
+    // web3.js' browser bundle serializes through a global Buffer it does not ship
+    if (!window.Buffer) { const m = await import('https://esm.sh/buffer@6.0.3'); window.Buffer = m.Buffer; }
     await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
     return window.solanaWeb3;
   }
