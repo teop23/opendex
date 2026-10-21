@@ -94,7 +94,7 @@ TEMPLATE = """<!doctype html>
   <article>
 {body}
   </article>
-  <p class="foot"><a href="./">Check a token</a><a href="https://github.com/teop23/opendex">GitHub</a><a href="https://x.com/opendexinfo">@opendexinfo</a><a href="https://github.com/teop23/opendex/blob/main/OPENDEX.md">This text as Markdown</a></p>
+  <p class="foot"><a href="./">Check a token</a><a href="https://github.com/teop23/opendex">GitHub</a><a href="https://larpcheck.app/c/FNtga4kQ6g/likely-real">larpcheck audit: likely real</a><a href="https://x.com/opendexinfo">@opendexinfo</a><a href="https://github.com/teop23/opendex/blob/main/OPENDEX.md">This text as Markdown</a></p>
 </main>
 </body>
 </html>
