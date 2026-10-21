@@ -30,15 +30,16 @@ export function verdict(card) {
   return { key: 'signed', text: 'CREATOR SIGNED', detail: 'links only, no on-chain claims' };
 }
 
-const LINK_NAME = { twitter: 'X', telegram: 'Telegram', website: 'website', discord: 'Discord', github: 'GitHub' };
+export const linkLabel = OpenDex.linkLabel;
+const labels = (soc) => Object.entries(soc || {}).map(([k, v]) => linkLabel(k, v));
 
 export function summary(card) {
   const ch = card.chain || {}, j = card.jup || {}, r = card.rug || {}, d = card.dex || {};
   const v = verdict(card);
   return {
     mint: card.mint,
-    symbol: ch.symbol || (j.raw && j.raw.symbol) || '',
-    name: ch.name || (j.raw && j.raw.name) || '',
+    symbol: String(ch.symbol || (j.raw && j.raw.symbol) || '').trim(),
+    name: String(ch.name || (j.raw && j.raw.name) || '').trim(),
     image: ch.image || (j.raw && j.raw.icon) || null,
     verdict: v.key,
     verdictText: v.text,
@@ -59,8 +60,8 @@ export function summary(card) {
     mcap: j.mcap ?? null,
     verified: !!j.verified,
     links: Object.keys(card.socials || {}),
-    launchLinks: Object.keys(ch.socials || {}).map((k) => LINK_NAME[k] || k),
-    signedLinks: Object.keys((card.creator && card.creator.socials) || {}).map((k) => LINK_NAME[k] || k),
+    launchLinks: labels(ch.socials),
+    signedLinks: labels(card.creator && card.creator.socials),
     paid: !!d.paid,
     paidAt: d.paidAt || null,
     at: card.builtAt,

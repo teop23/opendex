@@ -68,7 +68,7 @@ TEMPLATE = """<!doctype html>
   nav a {{ text-decoration: none; color: var(--ink-2); display: inline-block; padding: 6px 0; }}
   nav a:hover {{ color: var(--acc); }}
 
-  article > :not(figure) {{ max-width: 72ch; }}
+  article > :not(figure) {{ max-width: 72ch; margin-inline: auto; }}
   h1 {{ font-weight: 500; font-size: clamp(30px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; margin: 64px 0 20px; max-width: 20ch; text-wrap: balance; }}
   h1 em {{ font-style: normal; color: var(--acc); }}
   .lede {{ color: var(--ink-2); font-style: italic; margin: 0 0 40px; text-wrap: pretty; }}
@@ -83,7 +83,7 @@ TEMPLATE = """<!doctype html>
   figure img {{ display: block; width: 100%; height: auto; border: 1px solid var(--line); background: var(--wash); }}
   figure.cover {{ margin-top: 0; }}
   .sources {{ margin-top: 56px; padding-top: 20px; border-top: 1px dashed var(--line); color: var(--ink-2); font-size: 14px; }}
-  .tldr {{ border: 1px dashed var(--line); padding: 18px 20px 8px; margin: 0 0 24px; }}
+  .tldr {{ border: 1px dashed var(--line); padding: 18px 20px 8px; margin: 0 auto 24px; }}
   .tldr ul {{ margin: 0 0 10px; }}
   .foot {{ margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }}
 </style>
@@ -94,7 +94,7 @@ TEMPLATE = """<!doctype html>
   <article>
 {body}
   </article>
-  <p class="foot"><a href="./">Build a card</a><a href="https://github.com/teop23/opendex">GitHub</a><a href="https://x.com/opendexinfo">@opendexinfo</a><a href="https://github.com/teop23/opendex/blob/main/OPENDEX.md">This text as Markdown</a></p>
+  <p class="foot"><a href="./">Check a token</a><a href="https://github.com/teop23/opendex">GitHub</a><a href="https://x.com/opendexinfo">@opendexinfo</a><a href="https://github.com/teop23/opendex/blob/main/OPENDEX.md">This text as Markdown</a></p>
 </main>
 </body>
 </html>

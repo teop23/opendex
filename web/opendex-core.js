@@ -109,6 +109,14 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     for (let i = 31; i >= 0; i--) { out[i] = Number(n & 255n); n >>= 8n; }
     return out;
   };
+  /* true when s decodes to exactly 32 bytes: a real public key, not just a base58-looking string */
+  const isAddress = (s) => {
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s)) return false;
+    let lead = 0; while (s[lead] === '1') lead++;
+    let n = 0n; for (const c of s) n = n * 58n + BigInt(B58.indexOf(c));
+    let bytes = 0; while (n > 0n) { bytes++; n >>= 8n; }
+    return lead + bytes === 32;
+  };
   const b58encode = (bytes) => {
     let n = 0n;
     for (const b of bytes) n = (n << 8n) | BigInt(b);
@@ -385,6 +393,9 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const rpcUrl = opts.rpc || DEFAULT_RPC;
     mint = String(mint || '').trim();
     if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) throw new Error('not a Solana mint address');
+    if (!isAddress(mint)) {
+      return { mint, chain: null, jup: null, rug: null, dex: null, errors: { chain: 'not a token: this string is not a valid Solana address', jup: null, rug: null, dex: null }, creator: null, creatorWallet: null, creatorSource: null, builtAt: new Date(), socials: {} };
+    }
     const settled = await Promise.allSettled([onChain(mint, rpcUrl), jupiter(mint), rugcheck(mint), dexscreener(mint)]);
     const val = (i) => (settled[i].status === 'fulfilled' ? settled[i].value : null);
     const err = (i) => (settled[i].status === 'rejected' ? String(settled[i].reason.message || settled[i].reason) : null);
@@ -471,5 +482,16 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     return MEMO_PREFIX + JSON.stringify(body);
   };
 
-  root.OpenDex = { build, onChain, onChainRaw, metadataPda, jupiter, rugcheck, dexscreener, creatorUpdate, verifyClaims, feed, memoFor, DEFAULT_RPC, MEMO_PROGRAM, MEMO_PREFIX, INBOX, SOCIAL_KEYS, CLAIM_KEYS };
+  /* Label a link by where it really goes: a "twitter" field that points elsewhere shows that host, not "X". */
+  function linkLabel(kind, url) {
+    let host = '', path = '';
+    try { const u = new URL(url); host = u.hostname.replace(/^www\./, '').toLowerCase(); path = u.pathname; } catch (e) { return kind; }
+    if (kind === 'twitter') return /^(x|twitter)\.com$/.test(host) ? (/\/status\//.test(path) ? 'X post' : 'X') : host;
+    if (kind === 'telegram') return /^(t\.me|telegram\.me)$/.test(host) ? 'Telegram' : host;
+    if (kind === 'discord') return /^(discord\.gg|discord\.com)$/.test(host) ? 'Discord' : host;
+    if (kind === 'github') return host === 'github.com' ? 'GitHub' : host;
+    return 'website';
+  }
+
+  root.OpenDex = { linkLabel, build, onChain, onChainRaw, metadataPda, jupiter, rugcheck, dexscreener, creatorUpdate, verifyClaims, feed, memoFor, DEFAULT_RPC, MEMO_PROGRAM, MEMO_PREFIX, INBOX, SOCIAL_KEYS, CLAIM_KEYS };
 })(typeof window !== 'undefined' ? window : globalThis);

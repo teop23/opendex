@@ -45,7 +45,8 @@
   a:hover { color: var(--acc); }
   main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; }
   main > * { flex: none; }
-  body.has-card nav { order: -2; }
+  body.has-card nav { order: -3; }
+  body.has-card form.lookup, body.has-card #status { order: -2; }
   body.has-card #card { order: -1; margin-top: 24px; }
   body.has-card #creator { order: -1; }
   @media (min-width: 640px) { main { padding: 32px 24px 80px; } }
@@ -54,6 +55,7 @@
   nav b, nav a.home { font-weight: 700; color: var(--ink); }
   nav span { color: var(--ink-2); text-align: right; }
   nav a { text-decoration: none; color: var(--ink-2); display: inline-block; padding: 6px 0; }
+  nav span a + a::before { content: "·"; color: var(--line); margin: 0 10px; }
   .try { color: var(--ink-2); margin: 12px 0 0; }
   .try button { all: unset; cursor: pointer; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; padding: 6px 0; }
   .try button:hover { color: var(--acc); }
@@ -90,7 +92,7 @@
   .btn:hover { opacity: .88; }
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; }
   .btn.ghost:hover { border-color: var(--ink-2); opacity: 1; }
-  .btn[disabled] { opacity: .5; cursor: progress; }
+  .btn[disabled] { background: transparent; color: var(--ink-2); border-color: var(--line); cursor: not-allowed; opacity: 1; }
   details.adv { margin-top: 12px; color: var(--ink-2); max-width: 720px; }
   details.adv summary { cursor: pointer; list-style: none; }
   details.adv summary::-webkit-details-marker { display: none; }
@@ -204,12 +206,12 @@
 </head>
 <body>
 <main>
-  <nav><a class="home" href="/">opendex</a><span><a href="/manifesto">manifesto</a> · <a href="#recent">recent</a> · <a href="#creator" data-write>write</a> · <a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></span></nav>
+  <nav><a class="home" href="/">opendex</a><span><a href="/manifesto">manifesto</a><a href="#recent">recent</a><a href="#creator" data-write>write</a><a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></span></nav>
 
   <h1>The socials are already on-chain.<br><s>$299 receipt</s> <em>one signed tx.</em></h1>
   <p class="lede"><b>Paste a Solana token address and see whether its dev signed the X, Telegram and website links,</b> plus what the chain says about supply, freeze and liquidity. Free and open source; the $299 Dexscreener badge only proves someone paid. <a href="/manifesto">Why this exists</a>.</p>
   <form class="lookup" id="f" autocomplete="off">
-    <input id="mint" placeholder="mint address, or a pump.fun / Dexscreener link" spellcheck="false" required aria-label="mint address">
+    <input id="mint" placeholder="mint, pump.fun or dex link" spellcheck="false" required aria-label="mint address">
     <button class="btn" id="go" type="submit">read</button>
   </form>
   <p class="try">try: <button type="button" data-try="C4pEtBdZvEjqx8ZVwu6eYA87LPtosHzM8eFErnamepad">$NAMEPAD</button> dev-signed · <button type="button" data-try="9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump">$Fartcoin</button> unsigned, paid Dexscreener</p>
@@ -247,10 +249,10 @@
         <div class="field"><label for="u_devwallets">dev wallets</label><input id="u_devwallets" placeholder="addresses, comma separated" spellcheck="false"></div>
       </div>
     </details>
-    <p class="hint err" id="claimErr" hidden></p>
     <p class="memo-k">public memo, stored on-chain for good:</p>
     <pre class="memo" id="memoPreview"></pre>
     <p class="wallet" id="walletHint"></p>
+    <p class="hint err" id="claimErr" hidden></p>
     <div class="actions">
       <button class="btn" id="signBtn" type="button">sign &amp; send</button>
       <button class="btn ghost" id="copyMemo" type="button">copy memo</button>
@@ -306,7 +308,7 @@
   const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); };
 
   const links = (soc) => Object.keys(soc).length
-    ? `<span class="links ok">${Object.entries(soc).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener nofollow">${esc(LABEL[k] || k)}</a>`).join('<span class="dot"> · </span>')}</span>`
+    ? `<span class="links ok">${Object.entries(soc).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener nofollow">${esc(OpenDex.linkLabel(k, v))}</a>`).join('<span class="dot"> · </span>')}</span>`
     : `<span class="bad">none</span>`;
   const cleanErr = (e) => String(e || '').replace(/\s*https?:\/\/\S+/g, '').trim();
   const row = (k, d, s, sub) => `<div class="row${sub ? ' sub' : ''}"><span class="k">${k}</span><span class="d">${d}</span><span class="s">${s}</span></div>`;
@@ -320,7 +322,7 @@
     const auth = ch && ch.updateAuthority;
     const authTxt = ch && !ch.jsonUri ? 'no launch metadata was found' : !auth ? 'nobody can edit them' : KNOWN_AUTH[auth] ? 'only the ' + KNOWN_AUTH[auth] + ' can edit them' : 'wallet ' + short(auth) + ' can still edit them';
     const sym = ch ? (ch.symbol ? '$' + ch.symbol.replace(/^\$+/, '') : ch.name) : short(c.mint);
-    const linkNames = (soc) => Object.keys(soc || {}).map((k) => LABEL[k] || k);
+    const linkNames = (soc) => Object.entries(soc || {}).map(([k, v]) => OpenDex.linkLabel(k, v));
     const listOf = (a) => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 
     /* 1. verdict: what the creator wallet did. Never a safety rating. */
@@ -345,8 +347,11 @@
     else if (f === false) h.push('Freeze authority is still live: wallets can be frozen.');
     else if (m === true && f === true) h.push('Mint and freeze are revoked.');
     if (j && j.onCurve) h.push(`Still on the ${esc(j.launchpad)} curve, so no LP pool exists yet.`);
-    else if (r && r.lpLockedPct != null) h.push(`${r.lpLockedPct.toFixed(0)}% of LP is locked or burned${r.risks.length ? `, with ${r.risks.length} Rugcheck flag${r.risks.length > 1 ? 's' : ''}` : ''}.`);
-    if (j && j.holders != null) h.push(`${j.holders.toLocaleString('en-US')} holders, ${fmtUsd(j.mcap)} market cap${j.firstPool ? ', ' + ago2(j.firstPool) + ' old' : ''}.`);
+    else if (r && r.lpLockedPct != null) h.push(`${r.lpLockedPct.toFixed(0)}% of ${j && j.liquidity != null ? 'the ' + fmtUsd(j.liquidity) + ' ' : ''}LP is locked or burned${r.risks.length ? `, with ${r.risks.length} Rugcheck flag${r.risks.length > 1 ? 's' : ''}` : ''}.`);
+    const copycat = r && r.risks.find((x) => /copycat|impersonat/i.test(x.name || ''));
+    if (copycat) h.push(`<b class="bad">Rugcheck flags it as a copycat:</b> ${esc(copycat.desc || copycat.name)}.`);
+    if (j && j.audit && j.audit.devMints >= 1000) h.push(`The deployer wallet has launched ${j.audit.devMints.toLocaleString('en-US')} tokens: a launch bot, so it says little about who is behind this one.`);
+    if (j && j.holders != null) h.push(`${j.holders.toLocaleString('en-US')} holder${j.holders === 1 ? '' : 's'}, ${fmtUsd(j.mcap)} market cap${j.firstPool ? ', ' + ago2(j.firstPool) + ' old' : ''}.`);
 
     /* 3. numbers a trader scans first */
     const stats = j ? [
@@ -384,9 +389,9 @@
     if (r) {
       const lp = j && j.onCurve
         ? `Liquidity sits in the ${esc(j.launchpad)} bonding curve. There is no LP pool to lock or burn until the token graduates.`
-        : r.lpLockedPct == null ? 'LP lock not reported.' : `${r.lpLockedPct.toFixed(1)}% of the LP is locked or burned.`;
+        : r.lpLockedPct == null ? 'LP lock not reported.' : `${r.lpLockedPct.toFixed(0)}% of the ${j && j.liquidity != null ? fmtUsd(j.liquidity) + ' ' : ''}LP is locked or burned.${r.lpLockedPct < 50 ? ' The rest can be pulled.' : ''}`;
       rows.push(row('where is the liquidity',
-        `${lp}<span class="sub2">Rugcheck risk ${r.score ?? '—'}/100, lower is cleaner.${r.risks.length ? '' : ' No flags.'}</span>` + (r.risks.length ? `<ul>${r.risks.map((x) => `<li><b>${esc(x.name)}</b> <span class="mute">${esc(x.desc)}</span></li>`).join('')}</ul>` : ''),
+        `${lp}<span class="sub2">Rugcheck risk ${r.score ?? '—'}/100, lower is cleaner.${r.risks.length ? '' : ' No flags.'}</span>` + (r.risks.length ? `<ul>${r.risks.map((x) => `<li><b>${esc(x.name)}:</b> <span class="mute">${esc(x.desc)}</span></li>`).join('')}</ul>` : ''),
         j && j.onCurve ? S.mute('on curve') : r.lpLockedPct != null && r.lpLockedPct < 50 ? S.bad(`${r.lpLockedPct.toFixed(0)}% locked`) : r.risks.length ? S.bad(`${r.risks.length} flag${r.risks.length > 1 ? 's' : ''}`) : r.lpLockedPct >= 90 ? S.ok('locked') : S.mute('no flags')));
     } else {
       rows.push(row('where is the liquidity', `Rugcheck unavailable${c.errors.rug ? ': ' + esc(cleanErr(c.errors.rug)) : ''}.`, S.mute('—')));
@@ -394,16 +399,16 @@
 
     if (j) {
       rows.push(row('jupiter',
-        `${j.verified ? 'On Jupiter\'s verified list.' : 'Not on Jupiter\'s verified list.'} Organic score ${j.organicScore == null ? '—' : Math.round(j.organicScore)}/100${j.organicLabel ? ' (' + esc(String(j.organicLabel).toLowerCase()) + ')' : ''}, Jupiter's estimate of real-wallet activity (higher is better).${j.audit && j.audit.devMints != null ? ` The deployer wallet has launched ${j.audit.devMints} token${j.audit.devMints === 1 ? '' : 's'} in total${j.audit.devMints >= 20 ? ', a serial launcher' : ''}.` : ''}`
+        `${j.verified ? 'On Jupiter\'s verified list.' : 'Not on Jupiter\'s verified list.'} ${j.organicScore == null ? 'No organic score.' : Math.round(j.organicScore) === 0 ? 'Organic score 0/100: Jupiter measured no real-wallet trading yet.' : `Organic score ${Math.round(j.organicScore)}/100${j.organicLabel ? ' (' + esc(String(j.organicLabel).toLowerCase()) + ')' : ''}, Jupiter's estimate of real-wallet activity (higher is better).`}${j.audit && j.audit.devMints != null ? ` The deployer wallet has launched ${j.audit.devMints.toLocaleString('en-US')} token${j.audit.devMints === 1 ? '' : 's'} in total${j.audit.devMints >= 1000 ? ', a launch bot' : j.audit.devMints >= 20 ? ', a serial launcher' : ''}.` : ''}`
           + (!j.verified ? `<span class="sub2">Standard review is free: <a href="https://verified.jup.ag/tokens/submit" target="_blank" rel="noopener">verified.jup.ag</a></span>` : ''),
-        j.verified ? S.ok('verified') : S.mute('unverified')));
+        j.verified ? S.ok('jup verified') : S.mute('not jup verified')));
     } else {
       rows.push(row('jupiter', `Not indexed yet${c.errors.jup ? ': ' + esc(cleanErr(c.errors.jup)) : ''}.`, S.mute('—')));
     }
 
     if (d) {
       rows.push(row('dexscreener receipt',
-        `${d.paid ? 'Someone paid $299 for Enhanced Token Info on ' + fmtDate(d.paidAt) : d.processing ? 'An Enhanced Token Info order is processing; it can still fail' : 'Dexscreener shows no paid Enhanced Token Info right now'}${d.boosts ? ', ' + d.boosts + ' boosts' : ''}${d.cto ? ', CTO claimed' : ''}. A receipt is proof of payment, not of anything above. <a href="${esc(d.pairUrl)}" target="_blank" rel="noopener">chart</a>`,
+        `${d.paid ? 'Someone paid $299 for Enhanced Token Info on ' + fmtDate(d.paidAt) + (ago2(d.paidAt) ? ' (' + ago2(d.paidAt) + ' ago)' : '') : d.processing ? 'An Enhanced Token Info order is processing; it can still fail' : 'Dexscreener shows no paid Enhanced Token Info right now'}${d.boosts ? ', plus ' + d.boosts + ' paid boosts (ad slots that push it up the trending list)' : ''}${d.cto ? ', CTO claimed' : ''}. A receipt is proof of payment, not of anything above. <a href="${esc(d.pairUrl)}" target="_blank" rel="noopener">chart</a>`,
         S.mute(d.paid ? 'receipt' : 'no receipt')));
     } else {
       rows.push(row('dexscreener receipt', `Unavailable${c.errors.dex ? ': ' + esc(cleanErr(c.errors.dex)) : ''}.`, S.mute('—')));
@@ -435,6 +440,7 @@
     // prefill with what is already on-chain so the dev only edits what changed
     const pre = (c.creator && c.creator.socials) || (ch && ch.socials) || {};
     $('#u_twitter').value = pre.twitter || ''; $('#u_telegram').value = pre.telegram || ''; $('#u_website').value = pre.website || '';
+    window.__pre = { twitter: pre.twitter || '', telegram: pre.telegram || '', website: pre.website || '' };
     $('#creator').hidden = false;
     $('#walletMsg').textContent = ''; $('#walletMsg').className = '';
     if (!window.__keepSent) $('#sent').hidden = true;
@@ -535,7 +541,7 @@
     const h = location.hash.replace('#', '').trim();
     return MINT_RE.test(h) ? h : '';
   };
-  window.addEventListener('hashchange', () => { const h = mintFromUrl(); if (h && h !== $('#mint').value) { $('#mint').value = h; run(h); } });
+  window.addEventListener('hashchange', () => { if (location.hash === '#creator') return openWrite(); const h = mintFromUrl(); if (h && h !== $('#mint').value) { $('#mint').value = h; run(h); } });
 
   /* Edge cache first (same core, shared result, feeds "recently checked"); the browser build is the fallback. */
   async function fromEdge(mint) {
@@ -579,7 +585,8 @@
 
   async function run(input, opts = {}) {
     let mint = idFromInput(input);
-    const st = $('#status'); st.className = ''; st.textContent = 'reading chain, jupiter, rugcheck, dexscreener…';
+    const st = $('#status');
+    if (!String(input || '').trim()) { st.className = 'err'; st.textContent = 'Paste a token mint address or link first.'; $('#mint').focus(); return; } st.className = ''; st.textContent = 'reading chain, jupiter, rugcheck, dexscreener…';
     const dsx = String(input || '').match(/dexscreener\.com\/solana\/([A-Za-z0-9]{32,44})/i);
     if (dsx) { const m = await mintFromPair(dsx[1]); if (m) { mint = m; $('#mint').value = m; } }
     $('#go').disabled = true; $('#card').hidden = true; $('#foot').hidden = true;
@@ -601,7 +608,6 @@
     } catch (e) {
       st.className = 'err'; st.textContent = String(e.message || e);
       window.__card = null; $('#creator').hidden = true; document.body.classList.remove('has-card'); document.title = 'opendex';
-      if (location.pathname.startsWith('/t/')) history.replaceState(null, '', '/');
     } finally { $('#go').disabled = false; }
   }
 
@@ -645,15 +651,24 @@
     mark('#u_devwallets', $('#u_devwallets').value.split(',').map((x) => x.trim()).filter(Boolean).every((x) => ADDR_OK.test(x)));
     const LBL = { '#u_lpburn': 'LP burn needs a transaction signature', '#u_lplock': 'LP lock needs a transaction signature', '#u_vesting': 'vesting needs an account address', '#u_devwallets': 'dev wallets need Solana addresses, comma separated' };
     const out = bad.map((x) => LBL[x]);
-    const HOST = { '#u_twitter': /^(www\.)?(x|twitter)\.com$/i, '#u_telegram': /^(t\.me|telegram\.me)$/i, '#u_website': /./ };
-    const NAME = { '#u_twitter': 'X needs an https://x.com/… link', '#u_telegram': 'Telegram needs an https://t.me/… link', '#u_website': 'website needs a full https:// link' };
+    const HOST = { '#u_twitter': /^(www\.)?(x|twitter)\.com$/i, '#u_telegram': /^(t\.me|telegram\.me)$/i, '#u_website': /^[^.]+(\.[^.]+)+$/ };
+    const NEEDS_PATH = { '#u_twitter': true, '#u_telegram': true };
+    const NAME = { '#u_twitter': 'X needs a profile link like https://x.com/yourname', '#u_telegram': 'Telegram needs a link like https://t.me/yourgroup', '#u_website': 'website needs a full https:// address' };
+    const linkErr = [];
     for (const sel of Object.keys(HOST)) {
       const val = v(sel); let ok = !val;
-      if (val) { try { const u = new URL(val); ok = u.protocol === 'https:' && HOST[sel].test(u.hostname); } catch (e) { ok = false; } }
+      if (val) { try { const u = new URL(val); ok = !/\s/.test(val) && u.protocol === 'https:' && HOST[sel].test(u.hostname) && (!NEEDS_PATH[sel] || u.pathname.replace(/\/+$/, '').length > 1); } catch (e) { ok = false; } }
       $(sel).setAttribute('aria-invalid', ok ? 'false' : 'true');
-      if (!ok) out.unshift(NAME[sel]);
+      if (!ok) linkErr.push(NAME[sel]);
     }
+    out.unshift(...linkErr);
+    if ($('#u_note').value.length > 280) out.push(`the note is ${$('#u_note').value.length} characters, 280 max`);
     if (!v('#u_twitter') && !v('#u_telegram') && !v('#u_website') && !v('#u_note')) out.push('add at least one link or a note');
+    else {
+      const pre = window.__pre || {}, cl = claimsFromForm();
+      const same = ['twitter', 'telegram', 'website'].every((k) => (pre[k] || '') === v('#u_' + k)) && !v('#u_note') && !cl.lpBurn && !cl.lpLock && !cl.vesting && !cl.devWallets.length;
+      if (same) out.push('these are the links readers already see; change a link or add a note to publish an update');
+    }
     return out;
   }
   function updateMemo() {
@@ -661,8 +676,8 @@
     $('#claimErr').hidden = !probs.length;
     const m = memoText();
     const n0 = new TextEncoder().encode(m).length;
-    if (n0 > 566) probs.push(`the memo is ${n0} bytes, over the 566-byte limit of one transaction; shorten the note or links`);
-    $('#claimErr').textContent = probs.length ? 'Fix before signing: ' + probs.join('; ') + '.' : '';
+    if (n0 > 566) probs.push(`the memo is ${n0} bytes; one transaction fits 566, so cut ${n0 - 566} bytes from the note or links`);
+    $('#claimErr').textContent = probs.length ? 'Before signing: ' + probs.join('; ') + '.' : '';
     $('#claimErr').hidden = !probs.length;
     $('#signBtn').disabled = !!probs.length;
     const n = new TextEncoder().encode(m).length;
@@ -685,7 +700,7 @@
     try {
       const provider = window.solana || (window.phantom && window.phantom.solana);
       msg.className = '';
-      if (!provider) { msg.className = 'err'; msg.innerHTML = 'no Solana wallet in this browser · <a href="https://phantom.com/download" target="_blank" rel="noopener">get Phantom</a>'; return; }
+      if (!provider) { msg.className = 'err'; msg.innerHTML = 'No Solana wallet found in this browser. Install <a href="https://phantom.com/download" target="_blank" rel="noopener">Phantom</a>, or press copy memo and send it from the deployer wallet with any tool that can add an SPL Memo.'; return; }
       const memo = memoText();
       if (memo.length > 566) { msg.className = 'err'; msg.textContent = 'memo too long for one transaction; shorten links or note'; return; }
       msg.textContent = 'loading web3…';

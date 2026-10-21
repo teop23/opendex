@@ -51,10 +51,10 @@ function html(s, img, mint) {
     s.mintRevoked === null ? null : chip('mint', s.mintRevoked ? 'revoked' : 'LIVE', s.mintRevoked ? C.acc : C.bad),
     s.freezeRevoked === null ? null : chip('freeze', s.freezeRevoked ? 'revoked' : 'LIVE', s.freezeRevoked ? C.acc : C.bad),
     s.onCurve ? chip('LP', `${s.launchpad} curve`, C.ink) : s.lpLockedPct == null ? null : chip('LP locked', s.lpLockedPct.toFixed(0) + '%', s.lpLockedPct >= 90 ? C.acc : C.ink),
-    s.risk == null ? null : chip('rugcheck', `${s.risk}/100`, s.riskFlags ? C.bad : C.acc),
+    s.risk == null ? null : chip('rugcheck risk', `${s.risk}/100`, s.riskFlags ? C.bad : C.acc),
     s.holders == null ? null : chip('holders', s.holders.toLocaleString('en-US'), C.ink),
   ].filter(Boolean).join('');
-  const links = s.links.length ? s.links.map((k) => ({ twitter: 'X', telegram: 'Telegram', website: 'Website', discord: 'Discord', github: 'GitHub' }[k] || k)).join(' · ') : 'none on-chain';
+  const links = s.signedLinks.length ? 'creator-signed: ' + s.signedLinks.join(' · ') : s.launchLinks.length ? 'self-reported at launch: ' + s.launchLinks.join(' · ') : 'none on-chain';
   const receipt = s.paid ? `Dexscreener receipt: paid ${String(s.paidAt).slice(0, 10)}` : 'no Dexscreener receipt';
   const sym = s.symbol ? '$' + esc(s.symbol) : esc(short(mint));
   return `
@@ -80,7 +80,7 @@ function html(s, img, mint) {
       <div style="display:flex;color:${C.ink2}">${esc(receipt)}</div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:auto;padding-top:22px;border-top:1px solid ${C.line};font-size:22px;color:${C.ink2}">
-      <span style="color:${C.ink}">Who signed, not who paid.</span>
+      <span style="color:${C.ink}">Who signed, not who paid. Not a safety score.</span>
       <span>${esc(String(s.at).slice(0, 16).replace('T', ' '))} UTC</span>
     </div>
   </div>`;
@@ -95,7 +95,7 @@ export async function onRequestGet({ params, env, waitUntil }) {
     const s = summary(card);
     const img = await imageData(s.image);
     const markup = html(s, img, mint).replace(/>\s+</g, '><').trim();
-    return new ImageResponse(markup, {
+    const res = new ImageResponse(markup, {
       width: 1200,
       height: 630,
       format: 'png',
@@ -103,8 +103,11 @@ export async function onRequestGet({ params, env, waitUntil }) {
         { name: 'JetBrains Mono', data: f400, weight: 400, style: 'normal' },
         { name: 'JetBrains Mono', data: f700, weight: 700, style: 'normal' },
       ],
-      headers: { 'cache-control': 'public, max-age=300' },
     });
+    // the renderer marks images immutable for a year; these carry live numbers, so keep them for 5 minutes
+    const h = new Headers(res.headers);
+    h.set('cache-control', 'public, max-age=300');
+    return new Response(res.body, { status: res.status, headers: h });
   } catch (e) {
     return new Response('og: ' + String(e.message || e), { status: 502 });
   }

@@ -7,7 +7,7 @@ export async function onRequestGet({ params, env, request, waitUntil }) {
   const mint = String(params.mint || '').trim();
   const origin = env.SITE_ORIGIN || new URL(request.url).origin;
   const shell = await env.ASSETS.fetch(new Request(new URL('/', request.url), { headers: request.headers }));
-  if (!MINT_RE.test(mint)) return shell;
+  if (!MINT_RE.test(mint)) return new Response(shell.body, { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex' } });
   let html = await shell.text();
 
   let title = `opendex · ${short(mint)}`;
@@ -23,13 +23,13 @@ export async function onRequestGet({ params, env, request, waitUntil }) {
       s.mintRevoked == null ? null : `mint ${s.mintRevoked ? 'revoked' : 'LIVE'}`,
       s.freezeRevoked == null ? null : `freeze ${s.freezeRevoked ? 'revoked' : 'LIVE'}`,
       s.onCurve ? `on the ${s.launchpad} curve, no LP yet` : s.lpLockedPct == null ? null : `LP locked ${s.lpLockedPct.toFixed(0)}%`,
-      s.risk == null ? null : `rugcheck ${s.risk}/100`,
+      s.risk == null ? null : `rugcheck risk ${s.risk}/100`,
       s.holders == null ? null : `${s.holders.toLocaleString('en-US')} holders`,
       s.launchLinks.length ? `launch links: ${s.launchLinks.join(', ')}` : 'no launch links',
       s.signedLinks.length ? `creator-signed: ${s.signedLinks.join(', ')}` : null,
       s.paid ? `Dexscreener receipt ${String(s.paidAt).slice(0, 10)}` : 'no Dexscreener receipt',
     ].filter(Boolean);
-    desc = facts.join(' · ');
+    desc = facts.join(' · ') + '. Not a safety score.';
   } catch (e) {
     /* meta falls back to the generic text; the page itself still builds in the browser */
     if (e.notToken) { title = `Not a token mint: ${short(mint)} · opendex`; desc = 'This address is a wallet or program, not a token mint. opendex reads tokens only.'; }
