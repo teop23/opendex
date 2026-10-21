@@ -498,12 +498,18 @@
       if (memo.length > 566) { msg.className = 'err'; msg.textContent = 'memo too long for one transaction; shorten links or note'; return; }
       msg.textContent = 'loading web3…';
       const w3 = await loadWeb3();
-      const { publicKey } = await provider.connect();
       const card = window.__card;
-      if (card && card.creatorWallet && publicKey.toBase58() !== card.creatorWallet) {
-        msg.className = 'err'; msg.textContent = `connected ${short(publicKey.toBase58())} is not the creator wallet ${short(card.creatorWallet)}; switch wallets in Phantom and try again`;
-        return;
+      const want = card && card.creatorWallet;
+      let { publicKey } = await provider.connect();
+      if (want && publicKey.toBase58() !== want) {
+        // wrong account: drop the trusted connection so the wallet shows its account picker again
+        msg.className = 'err'; msg.textContent = `${short(publicKey.toBase58())} is not the creator wallet; pick ${short(want)} in the wallet popup`;
+        try { await provider.disconnect(); } catch (e) {}
+        ({ publicKey } = await provider.connect());
       }
+      if (want && publicKey.toBase58() !== want) {
+        msg.className = 'err'; msg.textContent = `signing with ${short(publicKey.toBase58())}, not the creator wallet ${short(want)}; readers will ignore this memo`;
+      } else { msg.className = ''; }
       const conn = new w3.Connection($('#rpc').value.trim() || OpenDex.DEFAULT_RPC, 'confirmed');
       const ix = new w3.TransactionInstruction({ keys: [], programId: new w3.PublicKey(OpenDex.MEMO_PROGRAM), data: new TextEncoder().encode(memo) });
       // 0-lamport transfer to the inbox: makes this update discoverable through getSignaturesForAddress(INBOX)
@@ -511,7 +517,7 @@
       const tx = new w3.Transaction().add(ix, inbox);
       tx.feePayer = publicKey;
       tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
-      msg.textContent = 'approve in wallet…';
+      msg.textContent = (msg.textContent ? msg.textContent + ' · ' : '') + 'approve in wallet…';
       const { signature } = await provider.signAndSendTransaction(tx);
       msg.innerHTML = `sent · <a href="https://solscan.io/tx/${esc(signature)}" target="_blank" rel="noopener">tx</a> · rebuild the card after confirmation`;
     } catch (e) { msg.className = 'err'; msg.textContent = String(e.message || e); }
