@@ -4,7 +4,7 @@ import { getCard, summary, short, MINT_RE } from '../_lib/card.js';
 
 const C = { bg: '#121317', wash: '#1a1b20', ink: '#eef0f4', ink2: '#a3a8b5', line: '#3a3d47', acc: '#6fe49b', bad: '#f0796b' };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmtUsd = (n) => (n == null ? null : n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(1) + 'K' : '$' + Number(n).toFixed(2));
+const fmtUsd = (n) => (n == null ? null : n >= 1e9 ? '$' + (n / 1e9).toFixed(2) + 'B' : n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(1) + 'K' : '$' + Number(n).toFixed(2));
 
 async function font(env, weight) {
   const key = `font:jbm:${weight}`;

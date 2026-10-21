@@ -55,7 +55,7 @@
   nav b, nav a.home { font-weight: 700; color: var(--ink); }
   nav span { color: var(--ink-2); text-align: right; }
   nav a { text-decoration: none; color: var(--ink-2); display: inline-block; padding: 6px 0; }
-  nav span a + a::before { content: "·"; color: var(--line); margin: 0 10px; }
+  nav span { display: flex; flex-wrap: wrap; justify-content: flex-end; column-gap: 18px; }
   .try { color: var(--ink-2); margin: 12px 0 0; }
   .try button { all: unset; cursor: pointer; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; padding: 6px 0; }
   .try button:hover { color: var(--acc); }
@@ -92,7 +92,8 @@
   .btn:hover { opacity: .88; }
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; }
   .btn.ghost:hover { border-color: var(--ink-2); opacity: 1; }
-  .btn[disabled] { background: transparent; color: var(--ink-2); border-color: var(--line); cursor: not-allowed; opacity: 1; }
+  .btn[disabled] { background: var(--line); color: var(--ink-2); border-color: var(--line); cursor: not-allowed; opacity: 1; }
+.hint.err.soft { color: var(--ink-2); }
   details.adv { margin-top: 12px; color: var(--ink-2); max-width: 720px; }
   details.adv summary { cursor: pointer; list-style: none; }
   details.adv summary::-webkit-details-marker { display: none; }
@@ -211,7 +212,7 @@
   <h1>The socials are already on-chain.<br><s>$299 receipt</s> <em>one signed tx.</em></h1>
   <p class="lede"><b>Paste a Solana token address and see whether its dev signed the X, Telegram and website links,</b> plus what the chain says about supply, freeze and liquidity. Free and open source; the $299 Dexscreener badge only proves someone paid. <a href="/manifesto">Why this exists</a>.</p>
   <form class="lookup" id="f" autocomplete="off">
-    <input id="mint" placeholder="mint, pump.fun or dex link" spellcheck="false" required aria-label="mint address">
+    <input id="mint" placeholder="mint, pump.fun or dex link" spellcheck="false" aria-label="mint address">
     <button class="btn" id="go" type="submit">read</button>
   </form>
   <p class="try">try: <button type="button" data-try="C4pEtBdZvEjqx8ZVwu6eYA87LPtosHzM8eFErnamepad">$NAMEPAD</button> dev-signed · <button type="button" data-try="9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump">$Fartcoin</button> unsigned, paid Dexscreener</p>
@@ -286,7 +287,7 @@
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const short = (a) => a ? a.slice(0, 4) + '…' + a.slice(-4) : '';
-  const fmtUsd = (n) => n == null ? '—' : n >= 1e6 ? '$' + (n/1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n/1e3).toFixed(1) + 'K' : '$' + Number(n).toFixed(2);
+  const fmtUsd = (n) => n == null ? '—' : n >= 1e9 ? '$' + (n/1e9).toFixed(2) + 'B' : n >= 1e6 ? '$' + (n/1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n/1e3).toFixed(1) + 'K' : '$' + Number(n).toFixed(2);
   const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
   const KNOWN_AUTH = { TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM: 'pump.fun program' };
   const LABEL = { twitter: 'X', telegram: 'Telegram', website: 'Website', discord: 'Discord', github: 'GitHub' };
@@ -313,7 +314,7 @@
   const cleanErr = (e) => String(e || '').replace(/\s*https?:\/\/\S+/g, '').trim();
   const row = (k, d, s, sub) => `<div class="row${sub ? ' sub' : ''}"><span class="k">${k}</span><span class="d">${d}</span><span class="s">${s}</span></div>`;
 
-  const ago2 = (iso) => { if (!iso) return null; const d = Math.max(0, (Date.now() - Date.parse(iso)) / 864e5); return d < 1 ? Math.max(1, Math.round(d * 24)) + 'h' : d < 60 ? Math.round(d) + 'd' : Math.round(d / 30) + 'mo'; };
+  const ago2 = (iso) => { if (!iso) return null; const d = Math.max(0, (Date.now() - Date.parse(iso)) / 864e5); return d < 1 ? Math.max(1, Math.round(d * 24)) + 'h' : d < 60 ? Math.round(d) + 'd' : d < 730 ? Math.round(d / 30) + 'mo' : (d / 365).toFixed(1).replace(/\.0$/, '') + 'y'; };
   const stat = (k, v, cls) => `<div class="stat"><span class="k">${k}</span><span class="v ${cls || ''}">${v}</span></div>`;
   const S = { ok: (t) => `<span class="ok">${t}</span>`, bad: (t) => `<span class="bad">${t}</span>`, mute: (t) => `<span class="mute">${t}</span>` };
 
@@ -389,17 +390,17 @@
     if (r) {
       const lp = j && j.onCurve
         ? `Liquidity sits in the ${esc(j.launchpad)} bonding curve. There is no LP pool to lock or burn until the token graduates.`
-        : r.lpLockedPct == null ? 'LP lock not reported.' : `${r.lpLockedPct.toFixed(0)}% of the ${j && j.liquidity != null ? fmtUsd(j.liquidity) + ' ' : ''}LP is locked or burned.${r.lpLockedPct < 50 ? ' The rest can be pulled.' : ''}`;
+        : r.lpLockedPct == null ? 'LP lock not reported.' : `${r.lpLockedPct.toFixed(0)}% of the ${j && j.liquidity != null ? fmtUsd(j.liquidity) + ' ' : ''}LP is locked or burned.${r.lpLockedPct < 50 ? ' The rest can be pulled.' : ''}${j && j.liquidity != null && j.liquidity < 10000 ? ' The pool is tiny, so the lock protects little.' : ''}`;
       rows.push(row('where is the liquidity',
         `${lp}<span class="sub2">Rugcheck risk ${r.score ?? '—'}/100, lower is cleaner.${r.risks.length ? '' : ' No flags.'}</span>` + (r.risks.length ? `<ul>${r.risks.map((x) => `<li><b>${esc(x.name)}:</b> <span class="mute">${esc(x.desc)}</span></li>`).join('')}</ul>` : ''),
-        j && j.onCurve ? S.mute('on curve') : r.lpLockedPct != null && r.lpLockedPct < 50 ? S.bad(`${r.lpLockedPct.toFixed(0)}% locked`) : r.risks.length ? S.bad(`${r.risks.length} flag${r.risks.length > 1 ? 's' : ''}`) : r.lpLockedPct >= 90 ? S.ok('locked') : S.mute('no flags')));
+        j && j.onCurve ? S.mute('on curve') : r.lpLockedPct != null && r.lpLockedPct < 50 ? S.bad(`${r.lpLockedPct.toFixed(0)}% locked`) : r.risks.length ? S.bad(`${r.risks.length} flag${r.risks.length > 1 ? 's' : ''}`) : r.lpLockedPct >= 90 ? (j && j.liquidity != null && j.liquidity < 10000 ? S.mute('locked, tiny pool') : S.ok('locked')) : S.mute('no flags')));
     } else {
       rows.push(row('where is the liquidity', `Rugcheck unavailable${c.errors.rug ? ': ' + esc(cleanErr(c.errors.rug)) : ''}.`, S.mute('—')));
     }
 
     if (j) {
       rows.push(row('jupiter',
-        `${j.verified ? 'On Jupiter\'s verified list.' : 'Not on Jupiter\'s verified list.'} ${j.organicScore == null ? 'No organic score.' : Math.round(j.organicScore) === 0 ? 'Organic score 0/100: Jupiter measured no real-wallet trading yet.' : `Organic score ${Math.round(j.organicScore)}/100${j.organicLabel ? ' (' + esc(String(j.organicLabel).toLowerCase()) + ')' : ''}, Jupiter's estimate of real-wallet activity (higher is better).`}${j.audit && j.audit.devMints != null ? ` The deployer wallet has launched ${j.audit.devMints.toLocaleString('en-US')} token${j.audit.devMints === 1 ? '' : 's'} in total${j.audit.devMints >= 1000 ? ', a launch bot' : j.audit.devMints >= 20 ? ', a serial launcher' : ''}.` : ''}`
+        `${j.verified ? 'On Jupiter\'s verified list.' : 'Not on Jupiter\'s verified list.'} ${j.organicScore == null ? 'No organic score.' : Math.round(j.organicScore) === 0 ? 'Organic score 0/100: Jupiter measured no real-wallet trading yet.' : `Organic score ${Math.round(j.organicScore)}/100${j.organicLabel ? ' (' + esc(String(j.organicLabel).toLowerCase()) + ')' : ''}, Jupiter's estimate of real-wallet activity (higher is better).`}${j.audit && j.audit.devMints != null ? ` Jupiter counts ${j.audit.devMints.toLocaleString('en-US')} token${j.audit.devMints === 1 ? '' : 's'} launched from the deployer wallet${j.audit.devMints >= 1000 ? ', so it is a launch bot or shared tool' : ''}.` : ''}`
           + (!j.verified ? `<span class="sub2">Standard review is free: <a href="https://verified.jup.ag/tokens/submit" target="_blank" rel="noopener">verified.jup.ag</a></span>` : ''),
         j.verified ? S.ok('jup verified') : S.mute('not jup verified')));
     } else {
@@ -408,7 +409,7 @@
 
     if (d) {
       rows.push(row('dexscreener receipt',
-        `${d.paid ? 'Someone paid $299 for Enhanced Token Info on ' + fmtDate(d.paidAt) + (ago2(d.paidAt) ? ' (' + ago2(d.paidAt) + ' ago)' : '') : d.processing ? 'An Enhanced Token Info order is processing; it can still fail' : 'Dexscreener shows no paid Enhanced Token Info right now'}${d.boosts ? ', plus ' + d.boosts + ' paid boosts (ad slots that push it up the trending list)' : ''}${d.cto ? ', CTO claimed' : ''}. A receipt is proof of payment, not of anything above. <a href="${esc(d.pairUrl)}" target="_blank" rel="noopener">chart</a>`,
+        `${d.paid ? 'Someone paid $299 for Enhanced Token Info on ' + fmtDate(d.paidAt) + (ago2(d.paidAt) ? ' (' + ago2(d.paidAt) + ' ago)' : '') : d.processing ? 'An Enhanced Token Info order is processing; it can still fail' : 'Dexscreener shows no paid Enhanced Token Info right now'}${d.boosts ? ', plus ' + d.boosts + ' paid boosts (ad slots that push it up the trending list)' : ''}${d.cto ? ', CTO claimed' : ''}. A receipt proves a payment, nothing about the project. <a href="${esc(d.pairUrl)}" target="_blank" rel="noopener">chart</a>`,
         S.mute(d.paid ? 'receipt' : 'no receipt')));
     } else {
       rows.push(row('dexscreener receipt', `Unavailable${c.errors.dex ? ': ' + esc(cleanErr(c.errors.dex)) : ''}.`, S.mute('—')));
@@ -519,7 +520,7 @@
           it.mintRevoked == null ? null : 'mint ' + (it.mintRevoked ? 'revoked' : 'LIVE'),
           it.onCurve ? 'on ' + it.launchpad + ' curve' : it.lpLockedPct == null ? null : 'LP ' + it.lpLockedPct.toFixed(0) + '%',
           it.risk == null ? null : 'risk ' + it.risk,
-          it.holders == null ? null : it.holders.toLocaleString('en-US') + ' holders',
+          it.holders == null ? null : it.holders.toLocaleString('en-US') + (it.holders === 1 ? ' holder' : ' holders'),
           it.paid ? 'dex receipt' : null,
         ].filter(Boolean).join(' · ');
         return `<li>
@@ -588,7 +589,8 @@
     const st = $('#status');
     if (!String(input || '').trim()) { st.className = 'err'; st.textContent = 'Paste a token mint address or link first.'; $('#mint').focus(); return; } st.className = ''; st.textContent = 'reading chain, jupiter, rugcheck, dexscreener…';
     const dsx = String(input || '').match(/dexscreener\.com\/solana\/([A-Za-z0-9]{32,44})/i);
-    if (dsx) { const m = await mintFromPair(dsx[1]); if (m) { mint = m; $('#mint').value = m; } }
+    if (dsx) { const m = await mintFromPair(dsx[1]); if (m) { mint = m; $('#mint').value = m; } else if (!MINT_RE.test(dsx[1])) { mint = ''; } }
+    if (dsx && !MINT_RE.test(mint)) { st.className = 'err'; st.textContent = 'Dexscreener does not know that pair. Paste the token mint instead.'; return; }
     $('#go').disabled = true; $('#card').hidden = true; $('#foot').hidden = true;
     try {
       if (!MINT_RE.test(mint)) throw new Error('not a Solana mint address. Paste the mint (contract) address, or a token or Dexscreener link.');
@@ -608,6 +610,7 @@
     } catch (e) {
       st.className = 'err'; st.textContent = String(e.message || e);
       window.__card = null; $('#creator').hidden = true; document.body.classList.remove('has-card'); document.title = 'opendex';
+      if (location.protocol !== 'file:' && location.pathname.startsWith('/t/') && location.pathname !== '/t/' + mint) history.replaceState(null, '', MINT_RE.test(mint) ? '/t/' + mint : '/');
     } finally { $('#go').disabled = false; }
   }
 
@@ -677,7 +680,9 @@
     const m = memoText();
     const n0 = new TextEncoder().encode(m).length;
     if (n0 > 566) probs.push(`the memo is ${n0} bytes; one transaction fits 566, so cut ${n0 - 566} bytes from the note or links`);
-    $('#claimErr').textContent = probs.length ? 'Before signing: ' + probs.join('; ') + '.' : '';
+    const onlySame = probs.length === 1 && /^these are the links readers already see/.test(probs[0]);
+    $('#claimErr').className = 'hint err' + (onlySame ? ' soft' : '');
+    $('#claimErr').textContent = onlySame ? 'Change a link or add a note to publish an update; these are the links readers already see.' : probs.length ? 'Before signing: ' + probs.join('; ') + '.' : '';
     $('#claimErr').hidden = !probs.length;
     $('#signBtn').disabled = !!probs.length;
     const n = new TextEncoder().encode(m).length;

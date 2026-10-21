@@ -64,14 +64,14 @@ TEMPLATE = """<!doctype html>
   nav {{ display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); font-size: 14px; }}
   nav b {{ font-weight: 700; }}
   nav b a {{ text-decoration: none; }}
-  nav span {{ color: var(--ink-2); }}
+  nav span {{ color: var(--ink-2); display: flex; flex-wrap: wrap; justify-content: flex-end; column-gap: 18px; }}
   nav a {{ text-decoration: none; color: var(--ink-2); display: inline-block; padding: 6px 0; }}
   nav a:hover {{ color: var(--acc); }}
 
-  article > :not(figure) {{ max-width: 72ch; margin-inline: auto; }}
-  h1 {{ font-weight: 500; font-size: clamp(30px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; margin: 64px 0 20px; max-width: 20ch; text-wrap: balance; }}
+  article > :not(figure) {{ max-width: 648px; margin-inline: auto; }}
+  h1 {{ font-weight: 500; font-size: clamp(30px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; margin: 64px auto 20px; text-wrap: balance; }}
   h1 em {{ font-style: normal; color: var(--acc); }}
-  .lede {{ color: var(--ink-2); font-style: italic; margin: 0 0 40px; text-wrap: pretty; }}
+  .lede {{ color: var(--ink-2); font-style: italic; margin: 0 auto 40px; text-wrap: pretty; }}
   h2 {{ font-weight: 700; font-size: 15px; margin: 72px 0 16px; padding-top: 20px; border-top: 1px dashed var(--line); text-wrap: balance; }}
   h2 .n {{ color: var(--acc); margin-right: 1ch; }}
   p {{ margin: 0 0 18px; text-wrap: pretty; }}
@@ -90,7 +90,7 @@ TEMPLATE = """<!doctype html>
 </head>
 <body>
 <main>
-  <nav><b><a href="/">opendex</a></b><span><a href="/">check a token</a> · <a href="/#recent">recent</a> · <a href="/#creator">write</a> · <a href="https://github.com/teop23/opendex">source</a></span></nav>
+  <nav><b><a href="/">opendex</a></b><span><a href="/">check a token</a> <a href="/#recent">recent</a> <a href="/#creator">write</a> <a href="https://github.com/teop23/opendex">source</a></span></nav>
   <article>
 {body}
   </article>

@@ -486,10 +486,10 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
   function linkLabel(kind, url) {
     let host = '', path = '';
     try { const u = new URL(url); host = u.hostname.replace(/^www\./, '').toLowerCase(); path = u.pathname; } catch (e) { return kind; }
-    if (kind === 'twitter') return /^(x|twitter)\.com$/.test(host) ? (/\/status\//.test(path) ? 'X post' : 'X') : host;
-    if (kind === 'telegram') return /^(t\.me|telegram\.me)$/.test(host) ? 'Telegram' : host;
-    if (kind === 'discord') return /^(discord\.gg|discord\.com)$/.test(host) ? 'Discord' : host;
-    if (kind === 'github') return host === 'github.com' ? 'GitHub' : host;
+    if (kind === 'twitter') return /^(x|twitter)\.com$/.test(host) ? (/\/status\//.test(path) ? 'X post' : 'X') : host + ' (in the X field)';
+    if (kind === 'telegram') return /^(t\.me|telegram\.me)$/.test(host) ? 'Telegram' : host + ' (in the Telegram field)';
+    if (kind === 'discord') return /^(discord\.gg|discord\.com)$/.test(host) ? 'Discord' : host + ' (in the Discord field)';
+    if (kind === 'github') return host === 'github.com' ? 'GitHub' : host + ' (in the GitHub field)';
     return 'website';
   }
 
