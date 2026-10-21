@@ -271,7 +271,8 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
       cto: !!cto,
       boosts: (orders.boosts || []).reduce((s, b) => s + (b.amount || 0), 0),
       orders: orders.orders || [],
-      pairUrl: p ? p.url : `https://dexscreener.com/solana/${mint}`,
+      // p.url is lowercased by Dexscreener; the pair address keeps base58 case so the link can be pasted back
+      pairUrl: p ? (p.pairAddress ? `https://dexscreener.com/solana/${p.pairAddress}` : p.url) : `https://dexscreener.com/solana/${mint}`,
       shownSocials: p && p.info ? p.info : null,
       priceUsd: p ? Number(p.priceUsd) : null,
       liquidityUsd: p && p.liquidity ? p.liquidity.usd : null,

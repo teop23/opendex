@@ -372,7 +372,9 @@
     }
 
     rows.push(row('launch links',
-      `${!Object.keys((ch && ch.socials) || {}).length && ch && ch.error ? 'could not load the launch metadata, so the links are unknown; read again in a minute' : links((ch && ch.socials) || {})}<span class="sub2">Written into the token's metadata at launch${ch && ch.createdOn ? ' on ' + esc(ch.createdOn.replace(/^https?:\/\//, '')) : ''}; ${esc(authTxt)}. Anyone can write anything here, so they prove nothing.${ch && ch.error ? ' Metadata JSON unreachable: ' + esc(ch.error) : ''}${c.errors.chain ? ' ' + esc(cleanErr(c.errors.chain)) : ''}</span>`,
+      `${!Object.keys((ch && ch.socials) || {}).length && ch && ch.error ? 'unknown: the launch metadata file did not load, read again in a minute' : links((ch && ch.socials) || {})}<span class="sub2">${ch && ch.error
+        ? `Launch links live in an off-chain metadata file that did not load (${esc(cleanErr(ch.error))}). On-chain, ${esc(authTxt)}.`
+        : `Written into the token's metadata at launch${ch && ch.createdOn ? ' on ' + esc(ch.createdOn.replace(/^https?:\/\//, '')) : ''}; ${esc(authTxt)}. Anyone can write anything here, so they prove nothing.`}${c.errors.chain ? ' ' + esc(cleanErr(c.errors.chain)) : ''}</span>`,
       Object.keys((ch && ch.socials) || {}).length ? S.mute('self-reported') : ch && ch.error ? S.mute('unknown') : S.mute('none')));
 
     if (m != null) rows.push(row('can the dev print or freeze',
@@ -385,7 +387,7 @@
         : r.lpLockedPct == null ? 'LP lock not reported.' : `${r.lpLockedPct.toFixed(1)}% of the LP is locked or burned.`;
       rows.push(row('where is the liquidity',
         `${lp}<span class="sub2">Rugcheck risk ${r.score ?? '—'}/100, lower is cleaner.${r.risks.length ? '' : ' No flags.'}</span>` + (r.risks.length ? `<ul>${r.risks.map((x) => `<li><b>${esc(x.name)}</b> <span class="mute">${esc(x.desc)}</span></li>`).join('')}</ul>` : ''),
-        j && j.onCurve ? S.mute('on curve') : r.risks.length ? S.bad(`${r.risks.length} flag${r.risks.length > 1 ? 's' : ''}`) : r.lpLockedPct >= 90 ? S.ok('locked') : S.mute('no flags')));
+        j && j.onCurve ? S.mute('on curve') : r.lpLockedPct != null && r.lpLockedPct < 50 ? S.bad(`${r.lpLockedPct.toFixed(0)}% locked`) : r.risks.length ? S.bad(`${r.risks.length} flag${r.risks.length > 1 ? 's' : ''}`) : r.lpLockedPct >= 90 ? S.ok('locked') : S.mute('no flags')));
     } else {
       rows.push(row('where is the liquidity', `Rugcheck unavailable${c.errors.rug ? ': ' + esc(cleanErr(c.errors.rug)) : ''}.`, S.mute('—')));
     }
@@ -410,7 +412,7 @@
     $('#card').innerHTML = `
       <div class="hd">
         <span class="id">${ch && ch.image ? `<img src="${esc(ch.image)}" alt="" referrerpolicy="no-referrer">` : ''}<span><span class="sym">${esc(ch ? ch.symbol || ch.name : '?')}</span> <span class="mute">${esc(ch && ch.name && ch.name !== ch.symbol ? ch.name : '')}</span><br><span class="mint">${esc(c.mint)}<button type="button" data-copy="${esc(c.mint)}">copy</button></span></span></span>
-        <span>built ${c.builtAt.toISOString().slice(0, 16).replace('T', ' ')} UTC<br>${shareUi(c.mint)}</span>
+        <span>data read ${c.builtAt.toISOString().slice(0, 16).replace('T', ' ')} UTC<br>${shareUi(c.mint)}</span>
       </div>
       <div class="verdict v-${vKey}">
         <div class="vd"><b>${vText}</b><span>${esc(vSub)}</span><small>Not a safety score. It only says who signed the links.</small></div>
@@ -418,7 +420,8 @@
       </div>
       ${rows.join('')}`;
     document.body.classList.add('has-card');
-    document.title = `${vText}: ${sym} · opendex`;
+    const nm = String((ch && ch.name) || '').trim();
+    document.title = `${vText}: ${sym}${nm && ch.symbol && nm.toLowerCase() !== String(ch.symbol).trim().replace(/^\$+/, '').toLowerCase() ? ', ' + nm : ''} · opendex`;
     $('#card').hidden = false;
     $('#foot').hidden = false;
     $('#card').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => copyText(b.dataset.copy, b.textContent === 'copy link' ? 'link copied' : 'copied')));
@@ -551,7 +554,8 @@
 
   function shareUi(mint) {
     const url = `${location.origin}/t/${mint}`;
-    const txt = `${(window.__card && window.__card.chain && window.__card.chain.symbol) ? '$' + window.__card.chain.symbol + ' ' : ''}trust card on opendex, who signed, not who paid`;
+    const sy = String((window.__card && window.__card.chain && window.__card.chain.symbol) || '').trim().replace(/^\$+/, '');
+    const txt = `${sy ? '$' + sy + ' ' : ''}trust card on opendex, who signed, not who paid`;
     return `<span class="share">share <button type="button" data-copy="${esc(url)}">copy link</button><a href="https://x.com/intent/post?text=${encodeURIComponent(txt)}&url=${encodeURIComponent(url)}" target="_blank" rel="noopener">post on X</a><a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">send on Telegram</a></span>`;
   }
 
@@ -576,6 +580,8 @@
   async function run(input, opts = {}) {
     let mint = idFromInput(input);
     const st = $('#status'); st.className = ''; st.textContent = 'reading chain, jupiter, rugcheck, dexscreener…';
+    const dsx = String(input || '').match(/dexscreener\.com\/solana\/([A-Za-z0-9]{32,44})/i);
+    if (dsx) { const m = await mintFromPair(dsx[1]); if (m) { mint = m; $('#mint').value = m; } }
     $('#go').disabled = true; $('#card').hidden = true; $('#foot').hidden = true;
     try {
       if (!MINT_RE.test(mint)) throw new Error('not a Solana mint address. Paste the mint (contract) address, or a token or Dexscreener link.');
@@ -594,7 +600,7 @@
       loadRecent();
     } catch (e) {
       st.className = 'err'; st.textContent = String(e.message || e);
-      window.__card = null; $('#creator').hidden = true; document.body.classList.remove('has-card');
+      window.__card = null; $('#creator').hidden = true; document.body.classList.remove('has-card'); document.title = 'opendex';
       if (location.pathname.startsWith('/t/')) history.replaceState(null, '', '/');
     } finally { $('#go').disabled = false; }
   }
@@ -615,7 +621,7 @@
   const h = mintFromUrl();
   const wantWrite = location.hash === '#creator';
   if (h) { document.body.classList.add('has-card'); $('#mint').value = h; run(h).then(() => { if (wantWrite) openWrite(); }); }
-  else if (/^\/t\/./.test(location.pathname)) { const st = $('#status'); st.className = 'err'; st.textContent = `"${decodeURIComponent(location.pathname.slice(3))}" is not a Solana mint address`; history.replaceState(null, '', '/'); }
+  else if (/^\/t\/./.test(location.pathname)) { const st = $('#status'); st.className = 'err'; st.textContent = `"${decodeURIComponent(location.pathname.slice(3))}" is not a Solana mint address`; history.replaceState(null, '', '/'); document.title = 'opendex'; }
   else if (wantWrite) openWrite();
   document.querySelectorAll('[data-try]').forEach((b) => b.addEventListener('click', async () => { $('#mint').value = b.dataset.try; await run(b.dataset.try, { push: true }); if (!$('#card').hidden) $('#card').scrollIntoView({ block: 'start' }); }));
 
