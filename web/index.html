@@ -30,7 +30,7 @@
   :root {
     --bg: oklch(14% 0.012 260);
     --ink: oklch(94% 0.01 260);
-    --ink-2: oklch(70% 0.02 260);
+    --ink-2: oklch(74% 0.02 260);
     --line: oklch(28% 0.015 260);
     --wash: oklch(18% 0.014 260);
     --acc: oklch(80% 0.17 150);
@@ -43,7 +43,11 @@
   body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 "JetBrains Mono", ui-monospace, Menlo, monospace; }
   a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
   a:hover { color: var(--acc); }
-  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; }
+  main > * { flex: none; }
+  body.has-card nav { order: -2; }
+  body.has-card #card { order: -1; margin-top: 24px; }
+  body.has-card #creator { order: -1; }
   @media (min-width: 640px) { main { padding: 32px 24px 80px; } }
 
   nav { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
@@ -53,13 +57,13 @@
   nav a:hover { color: var(--acc); }
 
   h1 { font-weight: 500; font-size: clamp(30px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; margin: 64px 0 20px; max-width: 24ch; text-wrap: balance; }
-  h1 s { color: var(--ink-2); text-decoration-color: var(--bad); text-decoration-thickness: 3px; }
+  h1 s { color: var(--ink-2); text-decoration-color: var(--bad); text-decoration-thickness: 3px; white-space: nowrap; }
   h1 em { font-style: normal; color: var(--acc); }
   .lede { color: var(--ink-2); max-width: 62ch; margin: 0 0 36px; text-wrap: pretty; }
   body.has-card h1 { font-size: 18px; margin: 28px 0 6px; letter-spacing: -0.01em; max-width: none; }
   body.has-card h1 br { display: none; }
   body.has-card .lede { margin-bottom: 20px; }
-  body.has-card .receipt { margin-top: 32px; }
+  body.has-card h1 { margin-top: 40px; }
 
   form.lookup { display: grid; grid-template-columns: 1fr auto; gap: 8px; max-width: 720px; }
   @media (max-width: 480px) { form.lookup { grid-template-columns: 1fr; } }
@@ -100,7 +104,7 @@
   .verdict .vd b { font-size: clamp(22px, 3.4vw, 30px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 700; text-wrap: balance; }
   .verdict.v-ok .vd b { color: var(--acc); }
   .verdict.v-bad .vd b { color: var(--bad); }
-  .verdict.v-none .vd b { color: var(--ink-2); }
+  .verdict.v-none .vd b { color: var(--ink); }
   .verdict .vd span { color: var(--ink); }
   .verdict .vd small { color: var(--ink-2); font-size: inherit; margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--line); }
   .verdict .vh p { margin: 0 0 16px; font-size: 16px; line-height: 1.5; text-wrap: pretty; max-width: 60ch; }
@@ -272,8 +276,8 @@
   function render(c) {
     const ch = c.chain, j = c.jup, r = c.rug, d = c.dex;
     const auth = ch && ch.updateAuthority;
-    const authTxt = !auth ? 'metadata immutable' : (KNOWN_AUTH[auth] ? KNOWN_AUTH[auth] + ' ' : 'update authority ') + short(auth);
-    const sym = ch ? (ch.symbol ? '$' + ch.symbol : ch.name) : short(c.mint);
+    const authTxt = !auth ? 'nobody can edit them' : KNOWN_AUTH[auth] ? 'only the ' + KNOWN_AUTH[auth] + ' can edit them' : 'wallet ' + short(auth) + ' can still edit them';
+    const sym = ch ? (ch.symbol ? '$' + ch.symbol.replace(/^\$+/, '') : ch.name) : short(c.mint);
     const linkNames = (soc) => Object.keys(soc || {}).map((k) => LABEL[k] || k);
     const listOf = (a) => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 
@@ -283,14 +287,14 @@
     const checked = flat.filter((x) => x.ok === true || x.ok === false);
     const failN = checked.filter((x) => x.ok === false).length;
     let vKey, vText, vSub;
-    if (!c.creator) { vKey = 'none'; vText = 'NO SIGNED LINKS'; vSub = c.creatorWallet ? 'the creator wallet has not published anything' : 'creator wallet unknown, nothing can be verified'; }
-    else if (failN) { vKey = 'bad'; vText = 'CLAIM FAILED'; vSub = `${failN} of ${checked.length} on-chain claims do not check out`; }
-    else if (checked.length) { vKey = 'ok'; vText = 'CREATOR SIGNED'; vSub = `${checked.length} of ${checked.length} on-chain claims verified`; }
-    else { vKey = 'ok'; vText = 'CREATOR SIGNED'; vSub = 'links only, no on-chain claims'; }
+    if (!c.creator) { vKey = 'none'; vText = 'NO SIGNED LINKS'; vSub = c.creatorWallet ? 'The deployer wallet has signed nothing. Links shown are self-reported at launch.' : 'No deployer wallet is known, so nothing can be verified.'; }
+    else if (failN) { vKey = 'bad'; vText = 'CLAIM FAILED'; vSub = `The deployer vouched for ${checked.length} thing${checked.length > 1 ? 's' : ''} on-chain and ${failN} ${failN > 1 ? 'are' : 'is'} false.`; }
+    else if (checked.length) { vKey = 'ok'; vText = 'CREATOR SIGNED'; vSub = `The deployer signed its links and vouched for ${checked.length} thing${checked.length > 1 ? 's' : ''} on-chain. All check out.`; }
+    else { vKey = 'ok'; vText = 'CREATOR SIGNED'; vSub = `The deployer signed its ${listOf(linkNames(c.creator.socials)) || 'links'}. Nothing else is vouched for.`; }
 
     /* 2. headline: the card in one breath, plain words */
     const h = [];
-    if (c.creator) h.push(`The wallet that deployed ${esc(sym)} signed its ${listOf(linkNames(c.creator.socials)) || 'links'} on ${fmtDate(c.creator.at)}${checked.length ? (failN ? `, and ${failN} of its ${checked.length} on-chain claims failed` : `, and its ${checked.length} on-chain claim${checked.length > 1 ? 's' : ''} check out`) : ', links only'}.`);
+    if (c.creator) h.push(`Signed on ${fmtDate(c.creator.at)} by the wallet that deployed ${esc(sym)}${checked.length ? (failN ? `; ${failN} of its ${checked.length} on-chain claims failed` : `; its ${checked.length} on-chain claim${checked.length > 1 ? 's' : ''} check out`) : ''}.`);
     else if (c.creatorWallet) h.push(`The wallet that deployed ${esc(sym)} has signed nothing; the links shown come from launch metadata and are unverified.`);
     else h.push(`No creator wallet is known for ${esc(sym)}, so no link can be verified.`);
     const m = j && j.audit ? j.audit.mintAuthorityDisabled : ch ? ch.mintAuthority === null : null;
@@ -316,17 +320,17 @@
     const rows = [];
     if (c.creator) {
       rows.push(row('who signed the links',
-        `${links(c.creator.socials)}<span class="sub2">Signed ${fmtDate(c.creator.at)} by ${esc(short(c.creator.signer || c.creatorWallet))}, the wallet that deployed this token${c.creatorSource ? ' (' + esc(c.creatorSource) + ')' : ''}. Memos from any other wallet are ignored. <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx</a></span>${c.creator.note ? `<span class="sub2">"${esc(c.creator.note)}"</span>` : ''}`,
-        (checked.length ? (failN ? S.bad(`${failN} FAILED`) : S.ok(`${checked.length} claims ok`)) : S.ok('creator')) + ' <a class="act" href="#creator" data-write>update</a>'));
+        `${links(c.creator.socials)}<span class="sub2">Signed ${fmtDate(c.creator.at)} by ${esc(short(c.creator.signer || c.creatorWallet))}, the wallet that deployed this token${c.creatorSource === 'jupiter dev' ? ' according to Jupiter' : c.creatorSource ? ' (' + esc(c.creatorSource) + ')' : ''}. Memos from any other wallet are ignored. <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx</a></span>${c.creator.note ? `<span class="sub2">dev's note: "${esc(c.creator.note)}"</span>` : ''}`,
+        (checked.length ? (failN ? S.bad(`${failN} FAILED`) : S.ok(`${checked.length} claims ok`)) : S.ok('signed by deployer')) + ' <a class="act" href="#creator" data-write>update links</a>'));
       rows.push(...claimRows(cl));
     } else {
       rows.push(row('who signed the links',
         c.creatorWallet ? `nobody yet<span class="sub2">Creator wallet ${esc(short(c.creatorWallet))} has published no opendex memo. Links below are self-reported at launch.${c.errors.creator ? ' ' + esc(c.errors.creator) : ''}</span>` : 'creator wallet unknown<span class="sub2">Jupiter has no dev field and the metadata has no update authority, so there is no key to check against.</span>',
-        c.creatorWallet ? S.mute('unsigned') + ' <a class="act" href="#creator" data-write>add links</a>' : S.mute('none')));
+        c.creatorWallet ? S.mute('unsigned') + ' <a class="act" href="#creator" data-write>dev? sign them</a>' : S.mute('none')));
     }
 
     rows.push(row('launch links',
-      `${links((ch && ch.socials) || {})}<span class="sub2">From the token's own metadata at launch: ${esc(authTxt)}${ch && ch.createdOn ? ', created on ' + esc(ch.createdOn) : ''}${ch && ch.tokenProgram === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' ? ', token-2022' : ''}${ch && ch.cid ? ', ipfs ' + esc(short(ch.cid)) : ''}.${ch && ch.error ? ' Metadata JSON unreachable: ' + esc(ch.error) : ''}${c.errors.chain ? ' ' + esc(c.errors.chain) : ''}</span>`,
+      `${links((ch && ch.socials) || {})}<span class="sub2">Written into the token's metadata at launch${ch && ch.createdOn ? ' on ' + esc(ch.createdOn.replace(/^https?:\/\//, '')) : ''}; ${esc(authTxt)}. Anyone can write anything here, so they prove nothing.${ch && ch.error ? ' Metadata JSON unreachable: ' + esc(ch.error) : ''}${c.errors.chain ? ' ' + esc(c.errors.chain) : ''}</span>`,
       Object.keys((ch && ch.socials) || {}).length ? S.mute('self-reported') : S.mute('none')));
 
     if (m != null) rows.push(row('can the dev print or freeze',
@@ -346,7 +350,7 @@
 
     if (j) {
       rows.push(row('jupiter',
-        `${j.verified ? 'On Jupiter\'s verified list.' : 'Not on Jupiter\'s verified list.'} Organic score ${j.organicScore == null ? '—' : Math.round(j.organicScore)}/100${j.organicLabel ? ' (' + esc(String(j.organicLabel).toLowerCase()) + ')' : ''}: real-wallet activity, higher is better.${j.audit && j.audit.devMints != null ? ` The dev wallet has launched ${j.audit.devMints} token${j.audit.devMints === 1 ? '' : 's'}.` : ''}`
+        `${j.verified ? 'On Jupiter\'s verified list.' : 'Not on Jupiter\'s verified list.'} Organic score ${j.organicScore == null ? '—' : Math.round(j.organicScore)}/100${j.organicLabel ? ' (' + esc(String(j.organicLabel).toLowerCase()) + ')' : ''}, Jupiter's estimate of real-wallet activity (higher is better).${j.audit && j.audit.devMints != null ? ` The deployer wallet has launched ${j.audit.devMints} token${j.audit.devMints === 1 ? '' : 's'} in total.` : ''}`
           + (!j.verified ? `<span class="sub2">Standard review is free: <a href="https://verified.jup.ag/tokens/submit" target="_blank" rel="noopener">verified.jup.ag</a></span>` : ''),
         j.verified ? S.ok('verified') : S.mute('unverified')));
     } else {
@@ -356,7 +360,7 @@
     if (d) {
       rows.push(row('dexscreener receipt',
         `${d.paid ? 'Someone paid $299 for Enhanced Token Info on ' + fmtDate(d.paidAt) : d.processing ? 'An Enhanced Token Info order is processing; it can still fail' : 'Nobody has paid Dexscreener for this token'}${d.boosts ? ', ' + d.boosts + ' boosts' : ''}${d.cto ? ', CTO claimed' : ''}. A receipt is proof of payment, not of anything above. <a href="${esc(d.pairUrl)}" target="_blank" rel="noopener">chart</a>`,
-        S.mute(d.paid ? 'paid' : 'unpaid')));
+        S.mute(d.paid ? 'receipt' : 'no receipt')));
     } else {
       rows.push(row('dexscreener receipt', `Unavailable${c.errors.dex ? ': ' + esc(c.errors.dex) : ''}.`, S.mute('—')));
     }
@@ -367,7 +371,7 @@
         <span>built ${c.builtAt.toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
       </div>
       <div class="verdict v-${vKey}">
-        <div class="vd"><b>${vText}</b><span>${esc(vSub)}</span><small>who signed, not whether it is safe</small></div>
+        <div class="vd"><b>${vText}</b><span>${esc(vSub)}</span><small>not a safety score: it says who signed the links</small></div>
         <div class="vh"><p>${h.join(' ')}</p><div class="stats">${stats}</div></div>
       </div>
       ${rows.join('')}`;
@@ -461,7 +465,7 @@
           it.paid ? 'dex receipt' : null,
         ].filter(Boolean).join(' · ');
         return `<li>
-          <span>${it.image ? `<img src="${esc(it.image)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ''}<a href="/t/${esc(it.mint)}">${esc(it.symbol ? '$' + it.symbol : short(it.mint))}</a> <span class="mute">${esc(it.name && it.name !== it.symbol ? it.name : '')}</span></span>
+          <span>${it.image ? `<img src="${esc(it.image)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ''}<a href="/t/${esc(it.mint)}">${esc(it.symbol ? '$' + it.symbol.replace(/^\$+/, '') : short(it.mint))}</a> <span class="mute">${esc(it.name && it.name !== it.symbol ? it.name : '')}</span></span>
           <span class="${cls}">${txt}</span>
           <span class="meta">${esc(facts)}${facts ? ' · ' : ''}<span class="when">${esc(ago(it.at))}</span></span>
         </li>`;
