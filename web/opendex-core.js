@@ -356,6 +356,7 @@
           if (body.mint && mint && body.mint !== mint) continue; // memo is about another token of the same creator
           return {
             mint: body.mint || mint || null,
+            signer: payer, // fee payer; equals the creator wallet by construction (see the check above)
             socials: pickSocials(body),
             note: typeof body.note === 'string' ? body.note.slice(0, 280) : null,
             claims: await verifyClaims(body.claims, dev, rpcUrl),
@@ -387,6 +388,8 @@
       errors: { chain: err(0), jup: err(1), rug: err(2), dex: err(3) },
       creator: null,
       creatorWallet: (val(1) && val(1).dev) || (val(0) && val(0).updateAuthority) || null,
+      // where the creator wallet came from: Jupiter's dev field, else the Metaplex update authority
+      creatorSource: val(1) && val(1).dev ? 'jupiter dev' : val(0) && val(0).updateAuthority ? 'update authority' : null,
       builtAt: new Date(),
     };
     if (card.creatorWallet && opts.creatorUpdate !== false) {

@@ -264,7 +264,7 @@
       const okN = checked.filter((x) => x.ok === true).length, failN = checked.filter((x) => x.ok === false).length;
       const status = !flat.length ? '<span class="mute">links only</span>' : failN ? `<span class="bad">${failN} FAILED</span>` : `<span class="ok">${okN}/${checked.length} claims verified</span>`;
       rows.push(row('creator-signed update',
-        `${esc(short(c.creatorWallet))} · ${fmtDate(c.creator.at)} · <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx ${esc(short(c.creator.signature))}</a>${c.creator.note ? `<span class="sub2">${esc(c.creator.note)}</span>` : ''}`,
+        `${fmtDate(c.creator.at)} · <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx ${esc(short(c.creator.signature))}</a>${c.creator.note ? `<span class="sub2">${esc(c.creator.note)}</span>` : ''}<span class="sub2">fee payer ${esc(short(c.creator.signer || c.creatorWallet))} is the creator wallet${c.creatorSource ? ' (' + esc(c.creatorSource) + ')' : ''}; memos from any other key are ignored</span>`,
         links(c.creator.socials) + ' ' + status + ' <a class="act" href="#creator" data-write>update</a>'));
       rows.push(...claimRows(cl));
     } else {

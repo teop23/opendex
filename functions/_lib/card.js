@@ -32,6 +32,11 @@ export function summary(card) {
     image: ch.image || (j.raw && j.raw.icon) || null,
     verdict: v.key,
     verdictText: v.text,
+    creatorWallet: card.creatorWallet || null,
+    creatorSource: card.creatorSource || null,
+    signer: (card.creator && card.creator.signer) || null, // always equals creatorWallet when a memo is shown
+    signedAt: (card.creator && card.creator.at) || null,
+    signature: (card.creator && card.creator.signature) || null,
     mintRevoked: j.audit ? !!j.audit.mintAuthorityDisabled : ch.mintAuthority === null ? true : ch.mintAuthority ? false : null,
     freezeRevoked: j.audit ? !!j.audit.freezeAuthorityDisabled : ch.freezeAuthority === null ? true : ch.freezeAuthority ? false : null,
     lpLockedPct: r.lpLockedPct ?? null,
