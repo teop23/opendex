@@ -8,6 +8,14 @@ const FRESH_MS = 10 * 60 * 1000; // serve from cache for 10 minutes
 const KEEP_S = 7 * 24 * 3600; // keep stale copies a week as a fallback
 const FEED_MAX = 60;
 
+/* Strip anything that could carry a secret before a card is cached or served: the RPC URL holds the API key. */
+const scrub = (card) => {
+  if (!card) return card;
+  delete card.rpc;
+  for (const k of Object.keys(card.errors || {})) if (card.errors[k]) card.errors[k] = String(card.errors[k]).replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim();
+  return card;
+};
+
 export const short = (a) => (a ? String(a).slice(0, 4) + '…' + String(a).slice(-4) : '');
 
 /* One line that says what the creator did, nothing about whether the token is good. */
@@ -72,7 +80,7 @@ export async function readFeed(env, limit = 30) {
 export async function getCard(env, mint, { force = false, ctx } = {}) {
   if (!MINT_RE.test(mint)) throw new Error('not a Solana mint address');
   const key = 'card:' + mint;
-  const stale = await env.OPENDEX_CACHE.get(key, 'json');
+  const stale = scrub(await env.OPENDEX_CACHE.get(key, 'json'));
   const age = stale ? Date.now() - Date.parse(stale.builtAt) : Infinity;
   if (stale && !force && age < FRESH_MS) return { card: stale, cached: true, age };
   try {
@@ -86,7 +94,7 @@ export async function getCard(env, mint, { force = false, ctx } = {}) {
     }
     // Cache and list only complete reads: a throttled Jupiter or RPC answer would otherwise stick for 10 minutes.
     const complete = !!card.chain && !card.errors.chain && !card.errors.jup && !card.errors.creator;
-    const json = JSON.stringify(card);
+    const json = JSON.stringify(scrub(card));
     if (complete) {
       const writes = Promise.all([env.OPENDEX_CACHE.put(key, json, { expirationTtl: KEEP_S }), pushFeed(env, card)]);
       if (ctx) ctx.waitUntil(writes); else await writes;

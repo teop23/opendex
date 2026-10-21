@@ -26,7 +26,8 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const t = setTimeout(() => ctl.abort(), timeoutMs);
     try {
       const r = await fetch(url, { ...init, signal: ctl.signal });
-      if (!r.ok) throw new Error(`HTTP ${r.status} ${url}`);
+      // host only: a keyed RPC URL must never end up in an error that gets cached and served
+      if (!r.ok) throw new Error(`HTTP ${r.status} from ${(() => { try { return new URL(url).host; } catch (e) { return 'upstream'; } })()}`);
       return await r.json();
     } finally {
       clearTimeout(t);
@@ -388,7 +389,6 @@ const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const err = (i) => (settled[i].status === 'rejected' ? String(settled[i].reason.message || settled[i].reason) : null);
     const card = {
       mint,
-      rpc: rpcUrl,
       chain: val(0),
       jup: val(1),
       rug: val(2),
