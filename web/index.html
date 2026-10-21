@@ -154,6 +154,9 @@
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .actions span { color: var(--ink-2); overflow-wrap: anywhere; }
   .actions .err { color: var(--bad); }
+  .sent { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--acc); color: var(--ink-2); max-width: 70ch; text-wrap: pretty; animation: rise .4s cubic-bezier(.16,1,.3,1) both; }
+  .sent b { color: var(--acc); }
+  @media (prefers-reduced-motion: reduce) { .sent { animation: none; } }
   .wallet { color: var(--ink-2); margin: 0 0 12px; max-width: 70ch; text-wrap: pretty; }
   .wallet b { color: var(--ink); font-weight: 400; overflow-wrap: anywhere; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--acc); color: var(--bg); padding: 8px 14px; font-weight: 700; z-index: var(--z-toast); opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -203,6 +206,7 @@
       <button class="btn ghost" id="copyMemo" type="button">copy memo</button>
       <span id="walletMsg"></span>
     </div>
+    <p class="sent" id="sent" hidden></p>
   </details>
 
   <p class="foot" id="foot" hidden>"DEX paid" is one field in one endpoint: <code>tokenProfile: approved</code>. It means a form was filled and $299 arrived. Everything above was readable before that payment and will be readable after the dev leaves. <a href="/manifesto">Read the argument</a>.</p>
@@ -318,6 +322,7 @@
     $('#u_twitter').value = pre.twitter || ''; $('#u_telegram').value = pre.telegram || ''; $('#u_website').value = pre.website || '';
     $('#creator').hidden = false;
     $('#walletMsg').textContent = ''; $('#walletMsg').className = '';
+    if (!window.__keepSent) $('#sent').hidden = true;
     updateMemo();
   }
 
@@ -519,7 +524,23 @@
       tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
       msg.textContent = (msg.textContent ? msg.textContent + ' · ' : '') + 'approve in wallet…';
       const { signature } = await provider.signAndSendTransaction(tx);
-      msg.innerHTML = `sent · <a href="https://solscan.io/tx/${esc(signature)}" target="_blank" rel="noopener">tx</a> · rebuild the card after confirmation`;
+      const txLink = `<a href="https://solscan.io/tx/${esc(signature)}" target="_blank" rel="noopener">tx ${esc(short(signature))}</a>`;
+      const done = $('#sent');
+      done.hidden = false;
+      done.innerHTML = `<b>signed and sent.</b> ${txLink} · waiting for confirmation…`;
+      done.scrollIntoView({ block: 'center' });
+      toast('memo sent');
+      msg.textContent = '';
+      try {
+        await conn.confirmTransaction({ signature, ...(await conn.getLatestBlockhash()) }, 'confirmed');
+        done.innerHTML = `<b>confirmed.</b> ${txLink} · every reader now shows these links as creator-signed. Rebuilding the card…`;
+        window.__keepSent = true; try { await run(card.mint); } finally { window.__keepSent = false; }
+        done.innerHTML = `<b>confirmed.</b> ${txLink} · the card above now shows this update as creator-signed.`;
+        $('#card').scrollIntoView({ block: 'start' });
+        toast('card rebuilt');
+      } catch (e) {
+        done.innerHTML = `<b>sent.</b> ${txLink} · confirmation not seen yet (${esc(String(e.message || e))}); reload the card in a minute.`;
+      }
     } catch (e) { msg.className = 'err'; msg.textContent = String(e.message || e); }
   });
 })();
