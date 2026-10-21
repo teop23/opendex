@@ -114,9 +114,24 @@
   .foot code { color: var(--ink); }
 
   /* feed + creator */
-  section { margin-top: 64px; padding-top: 20px; border-top: 1px dashed var(--line); }
-  section h2 { font-weight: 700; font-size: 14px; margin: 0 0 6px; }
-  section > p { color: var(--ink-2); max-width: 70ch; margin: 0 0 20px; text-wrap: pretty; }
+  section, details.write { margin-top: 64px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  section h2, details.write > summary { font-weight: 700; font-size: 14px; margin: 0 0 6px; }
+  section > p, details.write > p { color: var(--ink-2); max-width: 70ch; margin: 0 0 20px; text-wrap: pretty; }
+  details.write { margin-top: 24px; }
+  details.write > summary { cursor: pointer; list-style: none; display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+  details.write > summary::-webkit-details-marker { display: none; }
+  details.write > summary::before { content: "+"; color: var(--ink-2); }
+  details.write[open] > summary::before { content: "-"; }
+  details.write > summary .who { font-weight: 400; color: var(--ink-2); }
+  details.write > summary:hover .who { color: var(--ink); }
+  details.claims { margin: 0 0 20px; color: var(--ink-2); }
+  details.claims > summary { cursor: pointer; list-style: none; padding: 9px 0; max-width: 70ch; text-wrap: pretty; }
+  details.claims > summary::-webkit-details-marker { display: none; }
+  details.claims > summary::before { content: "+ "; }
+  details.claims[open] > summary::before { content: "- "; }
+  details.claims .fields { margin-top: 4px; }
+  .row .act { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; }
+  #card, #creator { scroll-margin-top: 16px; }
   section.feed ol { list-style: none; margin: 0; padding: 0; }
   section.feed li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
   section.feed li .meta { grid-column: 1 / -1; color: var(--ink-2); }
@@ -138,13 +153,16 @@
   pre.memo .n { color: var(--ink); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .actions span { color: var(--ink-2); overflow-wrap: anywhere; }
+  .actions .err { color: var(--bad); }
+  .wallet { color: var(--ink-2); margin: 0 0 12px; max-width: 70ch; text-wrap: pretty; }
+  .wallet b { color: var(--ink); font-weight: 400; overflow-wrap: anywhere; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--acc); color: var(--bg); padding: 8px 14px; font-weight: 700; z-index: var(--z-toast); opacity: 0; pointer-events: none; transition: opacity .2s; }
   .toast.on { opacity: 1; }
 </style>
 </head>
 <body>
 <main>
-  <nav><b>opendex</b><span><a href="/manifesto">manifesto</a> · <a href="#recent">recent</a> · <a href="#creator">write</a> · <a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></span></nav>
+  <nav><b>opendex</b><span><a href="/manifesto">manifesto</a> · <a href="#recent">recent</a> · <a href="#creator" data-write>write</a> · <a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></span></nav>
 
   <h1>The socials are already on-chain.<br><s>$299 receipt</s> <em>one signed tx.</em></h1>
   <p class="lede">Paste a mint. opendex reads the token's own metadata, Jupiter, Rugcheck and the creator wallet's signed memos. Open source, no key, no fee. <a href="/manifesto">Why this exists</a>.</p>
@@ -160,6 +178,33 @@
 
   <article id="card" class="receipt" hidden></article>
 
+  <details class="write" id="creator" hidden>
+    <summary><span>write</span><span class="who" id="writeWho"></span></summary>
+    <p>pump.fun metadata is immutable. If your X or Telegram changed, send one Memo transaction from the creator wallet, the one that deployed this token. Every reader of this format shows it as creator-signed. Cost: one signed tx.</p>
+    <div class="fields">
+      <div class="field"><label for="u_twitter">X</label><input id="u_twitter" placeholder="https://x.com/…" spellcheck="false"></div>
+      <div class="field"><label for="u_telegram">Telegram</label><input id="u_telegram" placeholder="https://t.me/…" spellcheck="false"></div>
+      <div class="field"><label for="u_website">website</label><input id="u_website" placeholder="https://…" spellcheck="false"></div>
+      <div class="field"><label for="u_note">note <span class="mute">optional</span></label><input id="u_note" placeholder="280 chars max" maxlength="280"></div>
+    </div>
+    <details class="claims">
+      <summary>optional: on-chain claims (LP burn, LP lock, vesting, dev wallets). Links alone are self-promotion; claims are checked by every reader, and a false one marks the token as a skip.</summary>
+      <div class="fields">
+        <div class="field"><label for="u_lpburn">LP burn</label><input id="u_lpburn" placeholder="tx signature" spellcheck="false"></div>
+        <div class="field"><label for="u_lplock">LP lock</label><input id="u_lplock" placeholder="tx signature" spellcheck="false"></div>
+        <div class="field"><label for="u_vesting">vesting</label><input id="u_vesting" placeholder="lock / vesting account" spellcheck="false"></div>
+        <div class="field"><label for="u_devwallets">dev wallets</label><input id="u_devwallets" placeholder="addresses, comma separated" spellcheck="false"></div>
+      </div>
+    </details>
+    <pre class="memo" id="memoPreview"></pre>
+    <p class="wallet" id="walletHint"></p>
+    <div class="actions">
+      <button class="btn" id="signBtn" type="button">sign &amp; send</button>
+      <button class="btn ghost" id="copyMemo" type="button">copy memo</button>
+      <span id="walletMsg"></span>
+    </div>
+  </details>
+
   <p class="foot" id="foot" hidden>"DEX paid" is one field in one endpoint: <code>tokenProfile: approved</code>. It means a form was filled and $299 arrived. Everything above was readable before that payment and will be readable after the dev leaves. <a href="/manifesto">Read the argument</a>.</p>
 
   <section class="feed recent" id="recent" hidden>
@@ -174,29 +219,6 @@
     <ol id="feedList"></ol>
   </section>
 
-  <section class="creator" id="creator">
-    <h2>write</h2>
-    <p>pump.fun metadata is immutable. If your X or Telegram changed, send one Memo transaction from the creator wallet (the one that deployed the token). Every reader of this format shows it as creator-signed. Cost: one signed tx.</p>
-    <div class="fields">
-      <div class="field"><label for="u_twitter">X</label><input id="u_twitter" placeholder="https://x.com/…" spellcheck="false"></div>
-      <div class="field"><label for="u_telegram">Telegram</label><input id="u_telegram" placeholder="https://t.me/…" spellcheck="false"></div>
-      <div class="field"><label for="u_website">website</label><input id="u_website" placeholder="https://…" spellcheck="false"></div>
-      <div class="field"><label for="u_note">note <span class="mute">optional</span></label><input id="u_note" placeholder="280 chars max" maxlength="280"></div>
-    </div>
-    <p class="hint">Links alone are self-promotion; nobody should trade on them. The claims below are checked on-chain by every reader. A false one marks the token as a skip.</p>
-    <div class="fields">
-      <div class="field"><label for="u_lpburn">LP burn</label><input id="u_lpburn" placeholder="tx signature" spellcheck="false"></div>
-      <div class="field"><label for="u_lplock">LP lock</label><input id="u_lplock" placeholder="tx signature" spellcheck="false"></div>
-      <div class="field"><label for="u_vesting">vesting</label><input id="u_vesting" placeholder="lock / vesting account" spellcheck="false"></div>
-      <div class="field"><label for="u_devwallets">dev wallets</label><input id="u_devwallets" placeholder="addresses, comma separated" spellcheck="false"></div>
-    </div>
-    <pre class="memo" id="memoPreview"></pre>
-    <div class="actions">
-      <button class="btn" id="signBtn" type="button">sign &amp; send</button>
-      <button class="btn ghost" id="copyMemo" type="button">copy memo</button>
-      <span id="walletMsg"></span>
-    </div>
-  </section>
 
   <p class="foot">sources: RPC getAccountInfo · IPFS · lite-api.jup.ag · api.rugcheck.xyz · api.dexscreener.com/orders/v1 · Memo program · inbox <a href="https://solscan.io/account/FGzq3zKAY18ifGNsKmHdbPo262FSQtnGoDdy8HRQpYSj" target="_blank" rel="noopener">FGzq…pYSj</a> · <a href="https://x.com/opendexinfo" target="_blank" rel="noopener">@opendexinfo</a> · <a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></p>
 </main>
@@ -239,12 +261,12 @@
       const status = !flat.length ? '<span class="mute">links only</span>' : failN ? `<span class="bad">${failN} FAILED</span>` : `<span class="ok">${okN}/${checked.length} claims verified</span>`;
       rows.push(row('creator-signed update',
         `${esc(short(c.creatorWallet))} · ${fmtDate(c.creator.at)} · <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx ${esc(short(c.creator.signature))}</a>${c.creator.note ? `<span class="sub2">${esc(c.creator.note)}</span>` : ''}`,
-        links(c.creator.socials) + ' ' + status));
+        links(c.creator.socials) + ' ' + status + ' <a class="act" href="#creator" data-write>update</a>'));
       rows.push(...claimRows(cl));
     } else {
       rows.push(row('creator-signed update',
         c.creatorWallet ? `creator ${esc(short(c.creatorWallet))} · no opendex memo${c.errors.creator ? `<span class="sub2">${esc(c.errors.creator)}</span>` : ''}` : 'creator wallet unknown',
-        '<span class="mute">none</span>'));
+        c.creatorWallet ? '<a class="act" href="#creator" data-write>add links</a>' : '<span class="mute">none</span>'));
     }
 
     if (j) {
@@ -286,9 +308,37 @@
     $('#card').hidden = false;
     $('#foot').hidden = false;
     $('#card').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => navigator.clipboard.writeText(b.dataset.copy).then(() => toast('copied'))));
+    const sym = ch ? (ch.symbol ? '$' + ch.symbol : ch.name) : short(c.mint);
+    $('#writeWho').textContent = `${sym} · ${c.creatorWallet ? 'creator wallet ' + short(c.creatorWallet) : 'creator wallet unknown'}`;
+    $('#walletHint').innerHTML = c.creatorWallet
+      ? `Connect the wallet that deployed this token: <b>${esc(c.creatorWallet)}</b>. Any other wallet can sign, but readers ignore it.`
+      : 'Creator wallet unknown for this mint; readers will not show this memo as creator-signed.';
+    // prefill with what is already on-chain so the dev only edits what changed
+    const pre = (c.creator && c.creator.socials) || (ch && ch.socials) || {};
+    $('#u_twitter').value = pre.twitter || ''; $('#u_telegram').value = pre.telegram || ''; $('#u_website').value = pre.website || '';
     $('#creator').hidden = false;
+    $('#walletMsg').textContent = ''; $('#walletMsg').className = '';
     updateMemo();
   }
+
+  /* write: reachable from the nav, the card row and #creator; needs a card first so the dev sees their own token */
+  function openWrite() {
+    const d = $('#creator');
+    if (!window.__card || d.hidden) {
+      const st = $('#status'); st.className = ''; st.textContent = "paste your token's mint first; the write form appears under its card";
+      $('#mint').focus();
+      return;
+    }
+    d.open = true;
+    d.scrollIntoView({ block: 'start' });
+    $('#u_twitter').focus({ preventScroll: true });
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-write]');
+    if (!a) return;
+    e.preventDefault();
+    openWrite();
+  });
 
   function claimRows(cl) {
     const NAME = { lpBurn: 'lpBurn', lpLock: 'lpLock', vesting: 'vesting', devWallets: 'devWallets' };
@@ -402,11 +452,16 @@
     } finally { $('#go').disabled = false; }
   }
 
-  $('#f').addEventListener('submit', (e) => { e.preventDefault(); run($('#mint').value.trim()); });
+  $('#f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await run($('#mint').value.trim());
+    if (!$('#card').hidden) $('#card').scrollIntoView({ block: 'start' });
+  });
   try { const saved = localStorage.getItem('opendex.rpc'); if (saved) $('#rpc').value = saved; } catch (e) {}
   $('#rpc').addEventListener('change', () => { try { localStorage.setItem('opendex.rpc', $('#rpc').value.trim()); } catch (e) {} });
   const h = mintFromUrl();
-  if (h) { $('#mint').value = h; run(h); }
+  const wantWrite = location.hash === '#creator';
+  if (h) { $('#mint').value = h; run(h).then(() => { if (wantWrite) openWrite(); }); }
 
   /* creator update */
   const socialsFromForm = () => ({ twitter: $('#u_twitter').value.trim(), telegram: $('#u_telegram').value.trim(), website: $('#u_website').value.trim() });
@@ -435,15 +490,16 @@
     const msg = $('#walletMsg');
     try {
       const provider = window.solana || (window.phantom && window.phantom.solana);
-      if (!provider) { msg.textContent = 'no Solana wallet found in this browser'; return; }
+      msg.className = '';
+      if (!provider) { msg.className = 'err'; msg.innerHTML = 'no Solana wallet in this browser · <a href="https://phantom.com/download" target="_blank" rel="noopener">get Phantom</a>'; return; }
       const memo = memoText();
-      if (memo.length > 566) { msg.textContent = 'memo too long for one transaction; shorten links or note'; return; }
+      if (memo.length > 566) { msg.className = 'err'; msg.textContent = 'memo too long for one transaction; shorten links or note'; return; }
       msg.textContent = 'loading web3…';
       const w3 = await loadWeb3();
       const { publicKey } = await provider.connect();
       const card = window.__card;
       if (card && card.creatorWallet && publicKey.toBase58() !== card.creatorWallet) {
-        msg.textContent = `connected ${short(publicKey.toBase58())} is not the creator wallet ${short(card.creatorWallet)}; readers will ignore this memo`;
+        msg.className = 'err'; msg.textContent = `connected ${short(publicKey.toBase58())} is not the creator wallet ${short(card.creatorWallet)}; switch wallets in Phantom and try again`;
         return;
       }
       const conn = new w3.Connection($('#rpc').value.trim() || OpenDex.DEFAULT_RPC, 'confirmed');
@@ -456,7 +512,7 @@
       msg.textContent = 'approve in wallet…';
       const { signature } = await provider.signAndSendTransaction(tx);
       msg.innerHTML = `sent · <a href="https://solscan.io/tx/${esc(signature)}" target="_blank" rel="noopener">tx</a> · rebuild the card after confirmation`;
-    } catch (e) { msg.textContent = String(e.message || e); }
+    } catch (e) { msg.className = 'err'; msg.textContent = String(e.message || e); }
   });
 })();
 </script>
