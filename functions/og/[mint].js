@@ -45,7 +45,7 @@ function html(s, img, mint) {
   const tone = s.verdict === 'failed' ? C.bad : s.verdict === 'none' ? C.ink2 : C.acc;
   const sub = s.verdict === 'failed' ? 'an on-chain claim in the creator memo does not check out'
     : s.verdict === 'verified' ? 'creator wallet published links and claims that check out on-chain'
-    : s.verdict === 'signed' ? 'creator wallet published links, no on-chain claims'
+    : s.verdict === 'signed' ? 'the deployer wallet signed its links; nothing else is vouched for'
     : 'no opendex memo from the creator wallet';
   const chips = [
     s.mintRevoked === null ? null : chip('mint', s.mintRevoked ? 'revoked' : 'LIVE', s.mintRevoked ? C.acc : C.bad),
@@ -91,6 +91,7 @@ export async function onRequestGet({ params, env, waitUntil }) {
   if (!MINT_RE.test(mint)) return new Response('not a mint', { status: 400 });
   try {
     const [{ card }, f400, f700] = await Promise.all([getCard(env, mint, { ctx: { waitUntil } }), font(env, 400), font(env, 700)]);
+    if (!card.chain && /^not a token/.test((card.errors && card.errors.chain) || '')) return Response.redirect(new URL('/og.png', 'https://opendex.info').href, 302);
     const s = summary(card);
     const img = await imageData(s.image);
     const markup = html(s, img, mint).replace(/>\s+</g, '><').trim();

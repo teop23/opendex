@@ -61,7 +61,7 @@
   body.has-card form.lookup::before { content: "check another token"; grid-column: 1 / -1; color: var(--ink-2); }
   ul.facts { list-style: none; margin: 0 0 20px; padding: 0; max-width: 70ch; }
   ul.facts li { padding: 4px 0; color: var(--ink-2); }
-  ul.facts b { color: var(--ink); font-weight: 500; display: inline-block; min-width: 11ch; }
+  ul.facts b { color: var(--ink); font-weight: 500; display: inline-block; min-width: 13ch; }
   ul.facts span { color: var(--ink); overflow-wrap: anywhere; }
   .memo-k { color: var(--ink-2); margin: 16px 0 -8px; }
   .hint.err { color: var(--bad); }
@@ -207,12 +207,12 @@
   <nav><a class="home" href="/">opendex</a><span><a href="/manifesto">manifesto</a> · <a href="#recent">recent</a> · <a href="#creator" data-write>write</a> · <a href="https://github.com/teop23/opendex" target="_blank" rel="noopener">source</a></span></nav>
 
   <h1>The socials are already on-chain.<br><s>$299 receipt</s> <em>one signed tx.</em></h1>
-  <p class="lede"><b>Check who actually signed a Solana token's links, for free.</b> Paste a mint: opendex reads the token's own metadata, Jupiter, Rugcheck and the creator wallet's signed memos. Open source, no key, no fee. <a href="/manifesto">Why this exists</a>.</p>
+  <p class="lede"><b>Paste a Solana token address and see whether its dev signed the X, Telegram and website links,</b> plus what the chain says about supply, freeze and liquidity. Free and open source; the $299 Dexscreener badge only proves someone paid. <a href="/manifesto">Why this exists</a>.</p>
   <form class="lookup" id="f" autocomplete="off">
     <input id="mint" placeholder="mint address, or a pump.fun / Dexscreener link" spellcheck="false" required aria-label="mint address">
     <button class="btn" id="go" type="submit">read</button>
   </form>
-  <p class="try">try: <button type="button" data-try="C4pEtBdZvEjqx8ZVwu6eYA87LPtosHzM8eFErnamepad">$NAMEPAD</button> dev-signed · <button type="button" data-try="9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump">$Fartcoin</button> unsigned, paid receipt</p>
+  <p class="try">try: <button type="button" data-try="C4pEtBdZvEjqx8ZVwu6eYA87LPtosHzM8eFErnamepad">$NAMEPAD</button> dev-signed · <button type="button" data-try="9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump">$Fartcoin</button> unsigned, paid Dexscreener</p>
   <details class="adv">
     <summary>custom RPC (public one is rate-limited)</summary>
     <input id="rpc" placeholder="https://mainnet.helius-rpc.com/?api-key=…" aria-label="RPC URL">
@@ -225,11 +225,12 @@
     <summary><span>write</span><span class="who" id="writeWho"></span></summary>
     <p>For the token's dev. pump.fun metadata cannot be edited, so if your X or Telegram changed, publish the new links in one Memo transaction from the wallet that deployed this token.</p>
     <ul class="facts">
-      <li><b>Sign with</b> <span id="wantWallet">the deployer wallet</span>. It also pays the fee. Memos from any other wallet are ignored.</li>
-      <li><b>Cost</b> one network fee, about 0.000005 SOL. No payment to opendex or anyone.</li>
-      <li><b>Who sees it</b> every opendex card, the opendex extension on Dexscreener pages, and any app that reads the open memo format. Dexscreener itself does not.</li>
-      <li><b>After</b> the card above switches to CREATOR SIGNED with your links, usually within a minute.</li>
+      <li><b>Sign with:</b> <span id="wantWallet">the deployer wallet</span>. It also pays the fee. Memos from any other wallet are ignored.</li>
+      <li><b>Cost:</b> one network fee, about 0.000005 SOL. No payment to opendex or anyone.</li>
+      <li><b>Who sees it:</b> every opendex card, the opendex extension on Dexscreener pages, and any app that reads the open memo format. Dexscreener itself does not.</li>
+      <li><b>After:</b> the card above switches to CREATOR SIGNED with your links, usually within a minute.</li>
     </ul>
+    <p class="hint">Prefilled with the links readers see now. Change what is different; empty fields are left out.</p>
     <div class="fields">
       <div class="field"><label for="u_twitter">X</label><input id="u_twitter" placeholder="https://x.com/…" spellcheck="false"></div>
       <div class="field"><label for="u_telegram">Telegram</label><input id="u_telegram" placeholder="https://t.me/…" spellcheck="false"></div>
@@ -328,7 +329,7 @@
     const checked = flat.filter((x) => x.ok === true || x.ok === false);
     const failN = checked.filter((x) => x.ok === false).length;
     let vKey, vText, vSub;
-    if (!c.creator) { vKey = 'none'; vText = 'NO SIGNED LINKS'; vSub = c.creatorWallet ? 'The deployer has never published an opendex memo, like most tokens. The links below are self-reported at launch.' : 'No deployer wallet is known, so no link can be verified.'; }
+    if (!c.creator) { vKey = 'none'; vText = 'NO SIGNED LINKS'; vSub = c.creatorWallet ? 'No opendex memo from the deployer was found, which is true of most tokens. The links below are self-reported at launch.' : 'No deployer wallet is known, so no link can be verified.'; }
     else if (failN) { vKey = 'bad'; vText = 'CLAIM FAILED'; vSub = `The deployer vouched for ${checked.length} thing${checked.length > 1 ? 's' : ''} on-chain and ${failN} ${failN > 1 ? 'are' : 'is'} false.`; }
     else if (checked.length) { vKey = 'ok'; vText = 'CREATOR SIGNED'; vSub = `The deployer signed its links and vouched for ${checked.length} thing${checked.length > 1 ? 's' : ''} on-chain. All check out.`; }
     else { vKey = 'ok'; vText = 'CREATOR SIGNED'; vSub = `The deployer${c.creatorSource === 'jupiter dev' ? ' (per Jupiter)' : ''} signed its ${listOf(linkNames(c.creator.socials)) || 'links'}. Nothing else is vouched for.`; }
@@ -362,12 +363,12 @@
     if (c.creator) {
       rows.push(row('who signed the links',
         `${links(c.creator.socials)}<span class="sub2">Signed ${fmtDate(c.creator.at)} by <a href="https://solscan.io/account/${esc(c.creator.signer || c.creatorWallet)}" target="_blank" rel="noopener">${esc(short(c.creator.signer || c.creatorWallet))}</a>, the wallet that deployed this token${c.creatorSource === 'jupiter dev' ? ' according to Jupiter' : c.creatorSource ? ' (' + esc(c.creatorSource) + ')' : ''}. Memos from any other wallet are ignored. <a href="https://solscan.io/tx/${esc(c.creator.signature)}" target="_blank" rel="noopener">tx</a></span>${c.creator.note ? `<span class="sub2">dev's note: "${esc(c.creator.note)}"</span>` : ''}`,
-        (checked.length ? (failN ? S.bad(`${failN} FAILED`) : S.ok(`${checked.length} claims ok`)) : S.ok('signed by deployer')) + ' <a class="act" href="#creator" data-write>update links</a>'));
+        (checked.length ? (failN ? S.bad(`${failN} FAILED`) : S.ok(`${checked.length} claims ok`)) : S.ok('signed by deployer')) + '<br><a class="act" href="#creator" data-write>update links</a>'));
       rows.push(...claimRows(cl));
     } else {
       rows.push(row('who signed the links',
         c.creatorWallet ? `nobody yet<span class="sub2">Deployer wallet <a href="https://solscan.io/account/${esc(c.creatorWallet)}" target="_blank" rel="noopener">${esc(short(c.creatorWallet))}</a> has published no opendex memo. Links below are self-reported at launch.${c.errors.creator ? ' ' + esc(cleanErr(c.errors.creator)) : ''}</span>` : 'creator wallet unknown<span class="sub2">Jupiter has no dev field and the metadata has no update authority, so there is no key to check against.</span>',
-        c.creatorWallet ? S.mute('unsigned') + ' <a class="act" href="#creator" data-write>are you the dev? sign</a>' : S.mute('none')));
+        c.creatorWallet ? S.mute('unsigned') + '<br><a class="act" href="#creator" data-write>are you the dev? sign them</a>' : S.mute('none')));
     }
 
     rows.push(row('launch links',
@@ -422,12 +423,12 @@
     $('#foot').hidden = false;
     $('#card').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => copyText(b.dataset.copy, b.textContent === 'copy link' ? 'link copied' : 'copied')));
     $('#wantWallet').textContent = c.creatorWallet || 'the deployer wallet (unknown for this token)';
+    for (const id of ['#u_lpburn', '#u_lplock']) { const el = $(id); el.disabled = !!(j && j.onCurve); if (el.disabled) { el.value = ''; el.placeholder = `no LP yet: still on the ${j.launchpad} curve`; } else el.placeholder = id === '#u_lpburn' ? 'signature of the tx that burned the LP tokens' : 'signature of the tx that locked the LP'; }
     $('#claimsNote').hidden = !(j && j.onCurve);
     $('#claimsNote').textContent = j && j.onCurve ? `This token is still on the ${j.launchpad} curve, so there is no LP to burn or lock yet.` : '';
     $('#writeWho').textContent = `${sym} · ${c.creatorWallet ? 'creator wallet ' + short(c.creatorWallet) : 'creator wallet unknown'}`;
-    $('#walletHint').innerHTML = c.creatorWallet
-      ? `Connect the wallet that deployed this token: <b>${esc(c.creatorWallet)}</b>. Any other wallet can sign, but readers ignore it.`
-      : 'Creator wallet unknown for this mint; readers will not show this memo as creator-signed.';
+    $('#walletHint').innerHTML = c.creatorWallet ? ''
+      : 'No deployer wallet is known for this token, so readers cannot show any memo as creator-signed.';
     // prefill with what is already on-chain so the dev only edits what changed
     const pre = (c.creator && c.creator.socials) || (ch && ch.socials) || {};
     $('#u_twitter').value = pre.twitter || ''; $('#u_telegram').value = pre.telegram || ''; $('#u_website').value = pre.website || '';
@@ -502,7 +503,7 @@
       const r = await fetch('/api/feed?limit=30');
       if (!r.ok) return;
       const items = await r.json();
-      if (!Array.isArray(items) || !items.length) return;
+      if (!Array.isArray(items) || !items.length) { ol.innerHTML = '<li class="mute">Nothing checked yet. Paste a token address above.</li>'; sec.hidden = false; return; }
       ol.innerHTML = items.map((it) => {
         const [cls, txt] = VERDICT[it.verdict] || VERDICT.none;
         const facts = [
@@ -637,18 +638,32 @@
     mark('#u_vesting', !v('#u_vesting') || ADDR_OK.test(v('#u_vesting')));
     mark('#u_devwallets', $('#u_devwallets').value.split(',').map((x) => x.trim()).filter(Boolean).every((x) => ADDR_OK.test(x)));
     const LBL = { '#u_lpburn': 'LP burn needs a transaction signature', '#u_lplock': 'LP lock needs a transaction signature', '#u_vesting': 'vesting needs an account address', '#u_devwallets': 'dev wallets need Solana addresses, comma separated' };
-    return bad.map((x) => LBL[x]);
+    const out = bad.map((x) => LBL[x]);
+    const HOST = { '#u_twitter': /^(www\.)?(x|twitter)\.com$/i, '#u_telegram': /^(t\.me|telegram\.me)$/i, '#u_website': /./ };
+    const NAME = { '#u_twitter': 'X needs an https://x.com/… link', '#u_telegram': 'Telegram needs an https://t.me/… link', '#u_website': 'website needs a full https:// link' };
+    for (const sel of Object.keys(HOST)) {
+      const val = v(sel); let ok = !val;
+      if (val) { try { const u = new URL(val); ok = u.protocol === 'https:' && HOST[sel].test(u.hostname); } catch (e) { ok = false; } }
+      $(sel).setAttribute('aria-invalid', ok ? 'false' : 'true');
+      if (!ok) out.unshift(NAME[sel]);
+    }
+    if (!v('#u_twitter') && !v('#u_telegram') && !v('#u_website') && !v('#u_note')) out.push('add at least one link or a note');
+    return out;
   }
   function updateMemo() {
     const probs = claimProblems();
     $('#claimErr').hidden = !probs.length;
-    $('#claimErr').textContent = probs.length ? 'Fix before signing: ' + probs.join('; ') + '. A wrong claim would show as CLAIM FAILED on your token.' : '';
-    $('#signBtn').disabled = !!probs.length;
     const m = memoText();
+    const n0 = new TextEncoder().encode(m).length;
+    if (n0 > 566) probs.push(`the memo is ${n0} bytes, over the 566-byte limit of one transaction; shorten the note or links`);
+    $('#claimErr').textContent = probs.length ? 'Fix before signing: ' + probs.join('; ') + '.' : '';
+    $('#claimErr').hidden = !probs.length;
+    $('#signBtn').disabled = !!probs.length;
     const n = new TextEncoder().encode(m).length;
     $('#memoPreview').innerHTML = `${esc(m)}\n<span class="n">${n} / 566 bytes</span>`;
   }
   ['#u_twitter', '#u_telegram', '#u_website', '#u_note', '#u_lpburn', '#u_lplock', '#u_vesting', '#u_devwallets'].forEach((s) => $(s).addEventListener('input', updateMemo));
+  $('#u_note').addEventListener('input', () => { const n = $('#u_note'); if (n.value.length > 280) n.value = n.value.slice(0, 280); });
   $('#copyMemo').addEventListener('click', () => copyText(memoText(), 'memo copied', $('#memoPreview')));
   try { updateMemo(); } catch (e) {}
 

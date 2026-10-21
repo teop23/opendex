@@ -30,6 +30,8 @@ export function verdict(card) {
   return { key: 'signed', text: 'CREATOR SIGNED', detail: 'links only, no on-chain claims' };
 }
 
+const LINK_NAME = { twitter: 'X', telegram: 'Telegram', website: 'website', discord: 'Discord', github: 'GitHub' };
+
 export function summary(card) {
   const ch = card.chain || {}, j = card.jup || {}, r = card.rug || {}, d = card.dex || {};
   const v = verdict(card);
@@ -57,6 +59,8 @@ export function summary(card) {
     mcap: j.mcap ?? null,
     verified: !!j.verified,
     links: Object.keys(card.socials || {}),
+    launchLinks: Object.keys(ch.socials || {}).map((k) => LINK_NAME[k] || k),
+    signedLinks: Object.keys((card.creator && card.creator.socials) || {}).map((k) => LINK_NAME[k] || k),
     paid: !!d.paid,
     paidAt: d.paidAt || null,
     at: card.builtAt,

@@ -65,7 +65,7 @@ TEMPLATE = """<!doctype html>
   nav b {{ font-weight: 700; }}
   nav b a {{ text-decoration: none; }}
   nav span {{ color: var(--ink-2); }}
-  nav a {{ text-decoration: none; color: var(--ink-2); }}
+  nav a {{ text-decoration: none; color: var(--ink-2); display: inline-block; padding: 6px 0; }}
   nav a:hover {{ color: var(--acc); }}
 
   article > :not(figure) {{ max-width: 72ch; }}

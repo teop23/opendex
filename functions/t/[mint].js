@@ -14,6 +14,7 @@ export async function onRequestGet({ params, env, request, waitUntil }) {
   let desc = 'Trust card built from on-chain metadata and public APIs. Who signed, not who paid.';
   try {
     const { card } = await getCard(env, mint, { ctx: { waitUntil } });
+    if (!card.chain && /^not a token/.test((card.errors && card.errors.chain) || '')) throw Object.assign(new Error('not a token'), { notToken: true });
     const s = summary(card);
     const symbol = String(s.symbol || '').trim().replace(/^\$+/, ''), name = String(s.name || '').trim();
     const sym = symbol ? '$' + symbol : short(mint);
@@ -24,12 +25,14 @@ export async function onRequestGet({ params, env, request, waitUntil }) {
       s.onCurve ? `on the ${s.launchpad} curve, no LP yet` : s.lpLockedPct == null ? null : `LP locked ${s.lpLockedPct.toFixed(0)}%`,
       s.risk == null ? null : `rugcheck ${s.risk}/100`,
       s.holders == null ? null : `${s.holders.toLocaleString('en-US')} holders`,
-      s.links.length ? `links on-chain: ${s.links.join(', ')}` : 'no links on-chain',
+      s.launchLinks.length ? `launch links: ${s.launchLinks.join(', ')}` : 'no launch links',
+      s.signedLinks.length ? `creator-signed: ${s.signedLinks.join(', ')}` : null,
       s.paid ? `Dexscreener receipt ${String(s.paidAt).slice(0, 10)}` : 'no Dexscreener receipt',
     ].filter(Boolean);
     desc = facts.join(' · ');
   } catch (e) {
     /* meta falls back to the generic text; the page itself still builds in the browser */
+    if (e.notToken) { title = `Not a token mint: ${short(mint)} · opendex`; desc = 'This address is a wallet or program, not a token mint. opendex reads tokens only.'; }
   }
 
   const tags = [
