@@ -6,6 +6,7 @@
   const DEFAULT_RPC = 'https://solana-rpc.publicnode.com'; // browser-friendly (CORS), no DAS
   const METAPLEX = 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s';
   const TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+const TOKEN_LEGACY = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
   const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
   const MEMO_PREFIX = 'opendex:v1:';
   /* Canonical inbox: sha256('opendex:inbox:v1:2'), off the ed25519 curve, so no private key exists for it.
@@ -155,8 +156,9 @@
   /* Raw path: works on any standard RPC (no DAS). Token-2022 metadata lives on the mint; legacy tokens use the Metaplex PDA. */
   async function onChainRaw(mint, rpcUrl) {
     const acc = await rpc(rpcUrl, 'getAccountInfo', [mint, { encoding: 'jsonParsed' }]);
-    if (!acc || !acc.value) throw new Error('mint account not found');
+    if (!acc || !acc.value) throw new Error('not a token: no account exists at this address');
     const v = acc.value, info = (v.data && v.data.parsed && v.data.parsed.info) || {};
+    if ((v.owner !== TOKEN_LEGACY && v.owner !== TOKEN_2022) || (v.data && v.data.parsed && v.data.parsed.type !== 'mint')) throw new Error('not a token: this address is not a token mint');
     const base = { tokenProgram: v.owner, supply: info.supply, decimals: info.decimals, mintAuthority: info.mintAuthority || null, freezeAuthority: info.freezeAuthority || null };
     if (v.owner === TOKEN_2022) {
       const ext = (info.extensions || []).find((e) => e.extension === 'tokenMetadata');
@@ -172,6 +174,8 @@
 
   async function onChainDas(mint, rpcUrl) {
     const a = await rpc(rpcUrl, 'getAsset', { id: mint });
+    // DAS answers for wallets and programs too; only a fungible token carries token_info
+    if (!a || !a.token_info) throw new Error('DAS: no token_info');
     const c = a.content || {};
     const ext = (a.mint_extensions && a.mint_extensions.metadata) || {};
     const updateAuthority =

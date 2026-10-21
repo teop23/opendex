@@ -90,7 +90,7 @@ TEMPLATE = """<!doctype html>
 </head>
 <body>
 <main>
-  <nav><b><a href="./">opendex</a></b><span><a href="./">read</a> · <a href="./#creator">write</a> · <a href="./#feed">feed</a> · argument · <a href="https://github.com/teop23/opendex">source</a></span></nav>
+  <nav><b><a href="/">opendex</a></b><span><a href="/">check a token</a> · <a href="/#recent">recent</a> · <a href="/#creator">write</a> · <a href="https://github.com/teop23/opendex">source</a></span></nav>
   <article>
 {body}
   </article>

@@ -15,12 +15,13 @@ export async function onRequestGet({ params, env, request, waitUntil }) {
   try {
     const { card } = await getCard(env, mint, { ctx: { waitUntil } });
     const s = summary(card);
-    const sym = s.symbol ? '$' + s.symbol : short(mint);
-    title = `${s.verdictText}: ${sym}${s.name && s.name !== s.symbol ? ', ' + s.name : ''} · opendex`;
+    const symbol = String(s.symbol || '').trim().replace(/^\$+/, ''), name = String(s.name || '').trim();
+    const sym = symbol ? '$' + symbol : short(mint);
+    title = `${s.verdictText}: ${sym}${name && name.toLowerCase() !== symbol.toLowerCase() ? ', ' + name : ''} · opendex`;
     const facts = [
-      s.mintAuthority === null ? null : `mint ${s.mintAuthority ? 'revoked' : 'LIVE'}`,
-      s.freezeAuthority === null ? null : `freeze ${s.freezeAuthority ? 'revoked' : 'LIVE'}`,
-      s.lpLockedPct == null ? null : `LP locked ${s.lpLockedPct.toFixed(0)}%`,
+      s.mintRevoked == null ? null : `mint ${s.mintRevoked ? 'revoked' : 'LIVE'}`,
+      s.freezeRevoked == null ? null : `freeze ${s.freezeRevoked ? 'revoked' : 'LIVE'}`,
+      s.onCurve ? `on the ${s.launchpad} curve, no LP yet` : s.lpLockedPct == null ? null : `LP locked ${s.lpLockedPct.toFixed(0)}%`,
       s.risk == null ? null : `rugcheck ${s.risk}/100`,
       s.holders == null ? null : `${s.holders.toLocaleString('en-US')} holders`,
       s.links.length ? `links on-chain: ${s.links.join(', ')}` : 'no links on-chain',
