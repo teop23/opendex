@@ -48,8 +48,8 @@ function html(s, img, mint) {
     : s.verdict === 'signed' ? 'creator wallet published links, no on-chain claims'
     : 'no opendex memo from the creator wallet';
   const chips = [
-    s.mintAuthority === null ? null : chip('mint', s.mintAuthority ? 'revoked' : 'LIVE', s.mintAuthority ? C.acc : C.bad),
-    s.freezeAuthority === null ? null : chip('freeze', s.freezeAuthority ? 'revoked' : 'LIVE', s.freezeAuthority ? C.acc : C.bad),
+    s.mintRevoked === null ? null : chip('mint', s.mintRevoked ? 'revoked' : 'LIVE', s.mintRevoked ? C.acc : C.bad),
+    s.freezeRevoked === null ? null : chip('freeze', s.freezeRevoked ? 'revoked' : 'LIVE', s.freezeRevoked ? C.acc : C.bad),
     s.lpLockedPct == null ? null : chip('LP locked', s.lpLockedPct.toFixed(0) + '%', s.lpLockedPct >= 90 ? C.acc : C.ink),
     s.risk == null ? null : chip('rugcheck', `${s.risk}/100`, s.riskFlags ? C.bad : C.acc),
     s.holders == null ? null : chip('holders', s.holders.toLocaleString('en-US'), C.ink),

@@ -392,7 +392,7 @@
       ol.innerHTML = items.map((it) => {
         const [cls, txt] = VERDICT[it.verdict] || VERDICT.none;
         const facts = [
-          it.mintAuthority == null ? null : 'mint ' + (it.mintAuthority ? 'revoked' : 'LIVE'),
+          it.mintRevoked == null ? null : 'mint ' + (it.mintRevoked ? 'revoked' : 'LIVE'),
           it.lpLockedPct == null ? null : 'LP ' + it.lpLockedPct.toFixed(0) + '%',
           it.risk == null ? null : 'risk ' + it.risk,
           it.holders == null ? null : it.holders.toLocaleString('en-US') + ' holders',
